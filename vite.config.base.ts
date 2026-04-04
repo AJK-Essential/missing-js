@@ -58,6 +58,12 @@ export const getBaseConfig = (pkgDir: string, libName: string): UserConfig => {
       sourcemap: true,
     },
     plugins: [
+      {
+        name: "force-banner",
+        renderChunk(code) {
+          return `${banner}\n${code}`;
+        },
+      },
       dts({
         root: pkgDir,
         entryRoot: resolve(pkgDir, "src"),

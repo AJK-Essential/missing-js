@@ -3,7 +3,7 @@ import { getBaseConfig } from "../../vite.config.base";
 import { resolve } from "path";
 
 export default defineConfig(async () => {
-  const baseConfig = getBaseConfig(__dirname, "missing-page-virtualizer");
+  const baseConfig = getBaseConfig(__dirname, "@missing-js/page-virtualizer");
 
   return {
     ...baseConfig,

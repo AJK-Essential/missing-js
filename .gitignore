@@ -2,3 +2,4 @@
 **/**/node_modules/
 **/**/.vscode
 **/**/real_life_tweets.json
+**/**/*.mjs

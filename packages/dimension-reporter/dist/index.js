@@ -1,7 +1,15 @@
 import { css as p, LitElement as g, html as u } from "lit";
 import { property as o, customElement as b } from "lit/decorators.js";
 /**
- * Missing JS - missing-dimension-reporter
+ * Missing JS - @missing-js/dimension-reporter
+ * @license MIT
+ * Copyright (c) 2026 Missing JS / AJK-Essential.
+ * ---------------------------------------------------------
+ * Licensed under the MIT License.
+ * Free for personal and commercial use.
+ */
+/**
+ * Missing JS - @missing-js/dimension-reporter
  * @license MIT
  * Copyright (c) 2026 Missing JS / AJK-Essential.
  * ---------------------------------------------------------

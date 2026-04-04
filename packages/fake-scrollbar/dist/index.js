@@ -1,7 +1,15 @@
 import { css as et, LitElement as rt, html as nt } from "lit";
 import { property as C, state as L, customElement as it } from "lit/decorators.js";
 /**
- * Missing JS - missing-fake-scrollbar
+ * Missing JS - @missing-js/fake-scrollbar
+ * @license MIT
+ * Copyright (c) 2026 Missing JS / AJK-Essential.
+ * ---------------------------------------------------------
+ * Licensed under the MIT License.
+ * Free for personal and commercial use.
+ */
+/**
+ * Missing JS - @missing-js/fake-scrollbar
  * @license MIT
  * Copyright (c) 2026 Missing JS / AJK-Essential.
  * ---------------------------------------------------------

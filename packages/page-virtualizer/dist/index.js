@@ -1,5 +1,15 @@
 import { LitElement as w, css as y, html as b } from "lit";
 import { property as h, state as p, customElement as v } from "lit/decorators.js";
+/**
+ * Missing JS - @missing-js/page-virtualizer (Pro)
+ * @license PolyForm Noncommercial 1.0.0
+ * Copyright (c) 2026 Missing JS / AJK-Essential.
+ * ---------------------------------------------------------
+ * This version is for non-commercial use only.
+ * Commercial license required for for-profit entities.
+ * Sunset Clause: Automatically transitions to MIT after Jan 1, 2029.
+ * Licensing: Purchase link will be updated soon
+ */
 class T {
   constructor(t) {
     this.size = t, this.tree = new Float64Array(t + 1);
