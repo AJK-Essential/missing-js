@@ -1,0 +1,68 @@
+<div class="panel"></div>
+<missing-page-virtualizer
+  #scroller
+  [items]="items"
+  (load)="refreshRenderedArrays($event)"
+  unique-selector="missing-dimension-reporter[is-page]"
+  tabbing-element-selector="feed-card"
+  num-of-items="3"
+  default-tabbing
+  default-arrow-up-navigation
+  default-arrow-down-navigation
+  default-page-up-navigation
+  default-page-down-navigation
+  needs-transition
+  tabindex="0"
+  (scrolling)="updatePageData(true)"
+  (scroll-stopped)="updatePageData(false)"
+>
+  @for (page of renderingArray; track page.pageIndex) {
+    @if (page.pageIndex <= items.length - 1) {
+      <missing-dimension-reporter
+        [attr.data-page-index]="page.pageIndex"
+        class="page"
+        style="--width: 100%"
+        is-page
+      >
+        @for (item of page.data; track item.cardNumber) {
+          <missing-dimension-reporter
+            style="
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              flex-direction: column;
+            "
+            [attr.data-page-index]="page.pageIndex"
+          >
+            <feed-card
+              [attr.data-item-index]="item.cardNumber - 1"
+              text-content="{{ item.textContent }}"
+              card-number="{{ item.cardNumber }}"
+              likes="{{ item.likes }}"
+              comments="{{ item.comments }}"
+              reshares="{{ item.reshares }}"
+              tabindex="0"
+              [attr.data-page-index]="page.pageIndex"
+            ></feed-card>
+          </missing-dimension-reporter>
+        }
+      </missing-dimension-reporter>
+    } @else {
+      <missing-dimension-reporter
+        [attr.data-page-index]="page.pageIndex"
+        class="page"
+        style="--width: 100%"
+        style="height: 0000px"
+        is-page
+      ></missing-dimension-reporter>
+    }
+  }
+</missing-page-virtualizer>
+<div class="panel">
+  @if (renderingArray?.length) {
+    <h2>Showing Items {{ startItem }} - {{ endItem }}</h2>
+  } @else {
+    <div class="blink">Please wait !!</div>
+  }
+</div>
+<missing-fake-scrollbar #fakeScrollbar></missing-fake-scrollbar>

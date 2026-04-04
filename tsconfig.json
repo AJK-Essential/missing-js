@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "types": ["node"], // <--- ADD THIS LINE
+    "strict": true,
+    "skipLibCheck": true
+  },
+  "files": [],
+  "references": [
+    { "path": "./internal/math" },
+    { "path": "./packages/dimension-reporter" },
+    { "path": "./packages/page-virtualizer" },
+    { "path": "./packages/fake-scrollbar" }
+  ]
+}

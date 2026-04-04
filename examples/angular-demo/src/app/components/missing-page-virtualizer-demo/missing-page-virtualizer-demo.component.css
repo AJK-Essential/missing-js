@@ -1,0 +1,77 @@
+:host {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  padding: 1rem;
+}
+* {
+  box-sizing: border-box;
+}
+.page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.5rem;
+}
+missing-page-virtualizer {
+  width: 50%;
+}
+missing-fake-scrollbar.visible {
+  display: initial;
+}
+missing-fake-scrollbar {
+  top: 0px;
+  right: 0px;
+  display: none;
+}
+missing-fake-scrollbar::part(thumb) {
+  --thumb-background: rgb(159 159 159);
+  border-radius: 0.5rem;
+  width: calc((9 / 16) * 1rem);
+}
+missing-fake-scrollbar::part(thumb):hover {
+  --thumb-background: rgb(209, 209, 209);
+  border-radius: 0.5rem;
+  width: calc((9 / 16) * 1rem);
+}
+missing-fake-scrollbar {
+  --scrollbar-width: calc((15 / 16) * 1rem);
+}
+missing-fake-scrollbar::part(track) {
+  --track-background: rgb(0 0 0 / 34%);
+  outline: 1px solid rgb(0 144 255 / 23%);
+  /* outline-offset: -1px; */
+  box-shadow: inset 0px 0px 16px 0px rgb(0 144 255 / 23%);
+}
+feed-card {
+  width: 100%;
+}
+.panel {
+  width: 25%;
+  /* background-color: rgba(0, 0, 0, 0.5); */
+  position: relative;
+  padding: 1rem;
+  font-family: 'Reddit Sans', 'Arial', sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.4);
+  flex-direction: column;
+}
+@keyframes blink-animation {
+  0% {
+    opacity: 1; /* Text is visible */
+  }
+  50% {
+    opacity: 0; /* Text is hidden */
+  }
+  100% {
+    opacity: 1; /* Text is visible again, cycle repeats */
+  }
+}
+.blink {
+  animation: blink-animation 2s ease infinite;
+}

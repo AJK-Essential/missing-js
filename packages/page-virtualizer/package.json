@@ -1,0 +1,27 @@
+{
+  "name": "@missing-js/page-virtualizer",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "clean": "rimraf dist && rimraf node_modules"
+  },
+  "devDependencies": {
+    "@missing-js/math": "*"
+  },
+  "peerDependencies": {
+    "lit": "^3.0.0",
+    "@missing-js/dimension-reporter": "*",
+    "@missing-js/fake-scrollbar": "*"
+  }
+}

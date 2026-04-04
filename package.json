@@ -1,0 +1,21 @@
+{
+  "name": "missing-js-monorepo",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "internal/*",
+    "examples/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "watch": "npm run dev --workspaces",
+    "clean": "npm run clean --workspaces --if-present"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.2",
+    "rimraf": "^5.0.0",
+    "typescript": "^6.0.2",
+    "vite": "^5.0.0",
+    "vite-plugin-dts": "^3.0.0"
+  }
+}
