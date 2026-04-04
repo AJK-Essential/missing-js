@@ -1,4 +1,4 @@
-# ⚡ Missing JS
+# Missing JS
 
 **A high-performance suite of "missing" components for modern web developers.**
 

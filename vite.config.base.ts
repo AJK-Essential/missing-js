@@ -1,6 +1,7 @@
 import { UserConfig } from "vite";
 import dts from "vite-plugin-dts";
 import { resolve } from "path";
+import MagicString from "magic-string";
 
 export const getBaseConfig = (pkgDir: string, libName: string): UserConfig => {
   const isInternal = pkgDir.includes("internal");
@@ -61,7 +62,21 @@ export const getBaseConfig = (pkgDir: string, libName: string): UserConfig => {
       {
         name: "force-banner",
         renderChunk(code) {
-          return `${banner}\n${code}`;
+          // 1. Initialize MagicString with the minified code
+          const s = new MagicString(code);
+
+          // 2. Prepend the banner at index 0
+          s.prepend(`${banner}\n`);
+
+          return {
+            code: s.toString(),
+            // 3. Generate a map that perfectly accounts for the new banner lines
+            map: s.generateMap({
+              hires: true,
+              source: "index.js", // Helps the debugger find the right file
+              includeContent: true,
+            }),
+          };
         },
       },
       dts({
