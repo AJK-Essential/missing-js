@@ -91,12 +91,12 @@ function generateCSVChunks() {
   if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir);
 
   for (let fileIndex = 0; fileIndex < NUM_FILES; fileIndex++) {
-    const fileName = `posts_chunk_${fileIndex + 1}.csv`;
+    const fileName = `posts_chunk_${fileIndex + 1}.txt`;
     const stream = fs.createWriteStream(path.join(outputDir, fileName));
 
     // CSV Header
     // Added 'isLast' column: 0 for false, 1 for true
-    stream.write("cardNumber,textContent,likes,comments,reshares,isLast\n");
+    stream.write("cardNumber|textContent|likes|comments|reshares|isLast\n");
 
     for (let i = 0; i < POSTS_PER_FILE; i++) {
       const globalIndex = fileIndex * POSTS_PER_FILE + i;
@@ -104,7 +104,6 @@ function generateCSVChunks() {
 
       // Escape quotes in textContent for CSV safety
       const rawMessage = generateMessage();
-      const escapedMessage = `"${rawMessage.replace(/"/g, '""')}"`;
 
       const likes = generateFormattedNumber(Math.floor(Math.random() * 120000));
       const comments = generateFormattedNumber(
@@ -118,7 +117,7 @@ function generateCSVChunks() {
       const isLast = cardNumber === TOTAL_POSTS ? 1 : 0;
 
       const cleanMessage = rawMessage.replace(/\n/g, " ");
-      const row = `${cardNumber},"${cleanMessage.replace(/"/g, '""')}",${likes},${comments},${reshares},${isLast}\n`;
+      const row = `${cardNumber}|${cleanMessage}|${likes}|${comments}|${reshares}|${isLast}\n`;
       stream.write(row);
     }
 
