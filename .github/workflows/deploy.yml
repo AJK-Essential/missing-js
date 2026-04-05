@@ -36,7 +36,8 @@ jobs:
 
       - name: Build
         # Uses your repo name: missing-js
-        run: npx ng build --configuration production --base-href /missing-js/
+        run: npm run build --workspace=angular-demo -- --configuration=production --base-href=/missing-js/
+        #    [  npm command ] [   npm flag     ] [DELIMITER] [      Angular flags      ]
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
