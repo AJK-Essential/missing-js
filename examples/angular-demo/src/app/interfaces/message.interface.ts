@@ -4,4 +4,5 @@ export interface Message {
   reshares: string;
   comments: string;
   textContent: string;
+  isLast: boolean;
 }

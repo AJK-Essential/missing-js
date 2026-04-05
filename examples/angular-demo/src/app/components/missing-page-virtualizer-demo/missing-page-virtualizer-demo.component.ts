@@ -44,6 +44,10 @@ export class MissingPageVirtualizerDemo implements AfterViewInit {
   endItem = 10;
   bucketSize = 10;
 
+  isLoading = false;
+  currentChunk = 1;
+  allPosts: Message[] = [];
+
   constructor(elRef: ElementRef) {
     this.hostElement = elRef.nativeElement;
   }
@@ -51,16 +55,11 @@ export class MissingPageVirtualizerDemo implements AfterViewInit {
   ngAfterViewInit(): void {
     this.scroller = this.scrollRef?.nativeElement;
     this.fakeScrollbar = this.fakeScrollbarRef?.nativeElement;
-
-    this.subscription = this.commonService.getData().subscribe((data) => {
-      this.items = this.commonService.createBucketsOf(this.bucketSize, data as Message[]);
-
+    this.loadMore().then(() => {
       this.scroller?.updateComplete.then(() => {
         if (this.scroller && this.fakeScrollbar) {
           this.scroller.items = this.items;
           this.scroller.fakeScrollbar = this.fakeScrollbar;
-          this.scroller.keyboardIncrements.pagedown = this.scroller.clientHeight * 10000;
-          this.scroller.keyboardIncrements.pageup = -this.scroller.clientHeight * 10000;
           this.scroller.initialize();
           this.fakeScrollbar.classList.add('visible');
         }
@@ -90,5 +89,47 @@ export class MissingPageVirtualizerDemo implements AfterViewInit {
         this.endItem = endPageIndex * this.bucketSize + this.bucketSize;
       }
     }
+  }
+
+  loadMore() {
+    // Capture the "Snapshot" before the new data arrives
+    const previousLength = this.allPosts.length;
+    this.isLoading = true;
+    const url = `./posts_chunk_${this.currentChunk}.txt`;
+    const loadMorePromise: Promise<void> = new Promise((resolve, reject) => {
+      this.commonService.streamPosts(url).subscribe({
+        next: (batch) => {
+          // Direct push is the fastest way to populate the 'database'
+          this.allPosts.push(...batch);
+        },
+
+        error: (err) => {
+          this.isLoading = false;
+          reject(err);
+        },
+        complete: () => {
+          this.isLoading = true; // Still "working" while we bucket
+
+          // 1. Get ONLY the newly arrived items
+          const newData = this.allPosts.slice(previousLength);
+
+          // 2. Turn only the new items into buckets
+          const newBuckets = this.commonService.createBucketsOf(this.bucketSize, newData);
+
+          // 3. Append new buckets to existing items
+          // This preserves your previous 10,000 pages and adds the new ones
+          this.items = [...this.items, ...newBuckets];
+
+          this.isLoading = false;
+          this.currentChunk++;
+
+          console.log(`Success! Total items now: ${this.allPosts.length}`);
+          console.log(`Total pages (buckets) now: ${this.items.length}`);
+          console.log(this.allPosts);
+          resolve();
+        },
+      });
+    });
+    return loadMorePromise;
   }
 }
