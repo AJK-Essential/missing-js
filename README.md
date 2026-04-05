@@ -33,3 +33,4 @@ For-profit entities using the **Virtualizer** series require a one-time Commerci
   - _Free for personal, educational, and non-commercial use._
   - _Commercial use requires a one-time perpetual license._
   - _The purchase link for the license will be updated soon_
+  - demo here: https://ajk-essential.github.io/missing-js/
