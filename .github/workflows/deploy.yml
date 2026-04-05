@@ -4,13 +4,11 @@ on:
   push:
     branches: ["main"]
 
-# Permissions required for GitHub Pages deployment
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# Allow only one concurrent deployment to avoid conflicts
 concurrency:
   group: "pages"
   cancel-in-progress: true
@@ -34,19 +32,19 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build
-        # Uses your repo name: missing-js
-        run: npm run build --workspace=angular-demo -- --configuration=production --base-href=/missing-js/
-        #    [  npm command ] [   npm flag     ] [DELIMITER] [      Angular flags      ]
+      - name: Build Monorepo
+        # This builds your libraries in /packages and /internal first
+        run: npm run build
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
+      - name: Build Angular Demo
+        # This specifically builds the demo with the correct base-href for GH Pages
+        run: npm run build --workspace=angular-demo -- --configuration=production --base-href=/missing-js/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Matches your dist/angular-demo/browser structure
-          path: './dist/angular-demo/browser'
+          # Using the exact path you provided
+          path: './examples/angular-demo/dist/angular-demo/browser'
 
       - name: Deploy to GitHub Pages
         id: deployment
