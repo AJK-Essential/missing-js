@@ -48,6 +48,8 @@ export class MissingPageVirtualizerDemo implements AfterViewInit {
   currentChunk = 1;
   allPosts: Message[] = [];
 
+  isScrolling = false;
+
   constructor(elRef: ElementRef) {
     this.hostElement = elRef.nativeElement;
   }
@@ -89,6 +91,7 @@ export class MissingPageVirtualizerDemo implements AfterViewInit {
         this.endItem = endPageIndex * this.bucketSize + this.bucketSize;
       }
     }
+    this.isScrolling = isScrolling;
   }
 
   loadMore() {
@@ -131,5 +134,10 @@ export class MissingPageVirtualizerDemo implements AfterViewInit {
       });
     });
     return loadMorePromise;
+  }
+  loadMoreItems() {
+    this.loadMore().then(() => {
+      this.scroller?.addNewData('append', this.items);
+    });
   }
 }

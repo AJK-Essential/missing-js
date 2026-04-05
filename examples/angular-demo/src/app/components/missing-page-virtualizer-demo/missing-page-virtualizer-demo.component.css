@@ -54,12 +54,16 @@ feed-card {
   /* background-color: rgba(0, 0, 0, 0.5); */
   position: relative;
   padding: 1rem;
-  font-family: 'Reddit Sans', 'Arial', sans-serif;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   display: flex;
   align-items: center;
   justify-content: center;
   color: rgba(255, 255, 255, 0.4);
   flex-direction: column;
+  font-weight: 200;
+}
+.panel * {
+  font-weight: 500;
 }
 @keyframes blink-animation {
   0% {
@@ -74,4 +78,15 @@ feed-card {
 }
 .blink {
   animation: blink-animation 2s ease infinite;
+}
+.loader-banner {
+  overflow: hidden;
+  bottom: 0px;
+  width: 100%;
+  background-color: rgba(1, 14, 54, 0.973);
+  color: rgba(255, 255, 255, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 50px;
 }

@@ -44,6 +44,15 @@
               tabindex="0"
               [attr.data-page-index]="page.pageIndex"
             ></feed-card>
+            @if (
+              page.pageIndex === this.items.length - 1 &&
+              page.data.indexOf(item) === page.data.length - 1 &&
+              !item.isLast
+            ) {
+              <div class="loader-banner">
+                <button (click)="loadMoreItems()">Load more</button>
+              </div>
+            }
           </missing-dimension-reporter>
         }
       </missing-dimension-reporter>
@@ -60,6 +69,7 @@
 </missing-page-virtualizer>
 <div class="panel">
   @if (renderingArray?.length) {
+    <h3>{{ isScrolling ? 'Scrolling' : 'Not Scrolling' }}</h3>
     <h2>Showing Items {{ startItem }} - {{ endItem }}</h2>
   } @else {
     <div class="blink">Please wait !!</div>

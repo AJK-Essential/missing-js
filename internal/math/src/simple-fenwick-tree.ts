@@ -12,17 +12,22 @@ export class FenwickTree {
    * Bulk initialization in O(N) time.
    * Perfect for setting all pages to a 'defaultHeight' at startup.
    */
+  // Use this for PREPEND and APPEND (Index shifts)
   initAll(heights: Float64Array): void {
-    // 1. Fill the values array and a temporary 1-based prefix sum
+    if (heights.length > this.size) {
+      this.size = heights.length;
+      this.tree = new Float64Array(this.size + 1);
+    } else {
+      this.tree.fill(0);
+    }
     this.values = heights;
-    for (let i = 0; i < this.size; i++) {
+
+    for (let i = 0; i < heights.length; i++) {
       this.tree[i + 1] = heights[i];
     }
-
-    // 2. The O(N) magic: Each index adds its value to its immediate parent
-    for (let i = 1; i <= this.size; i++) {
+    for (let i = 1; i <= heights.length; i++) {
       let j = i + (i & -i);
-      if (j <= this.size) {
+      if (j <= heights.length) {
         this.tree[j] += this.tree[i];
       }
     }
@@ -83,5 +88,9 @@ export class FenwickTree {
 
   getSingleHeight(index: number): number {
     return this.values[index];
+  }
+
+  getValues() {
+    return this.values;
   }
 }

@@ -469,27 +469,44 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
     }
   }
   addNewData(type: "append" | "prepend", newItems: typeof this.items) {
-    const newLength = newItems.length;
-    const currentLength = this.items.length;
-    const newRawHts = new Float64Array(newLength).fill(this.defaultHeight);
+    if (!this.ft) return;
+    this.updateMemoryWithNewHeights();
+    const newDataTotalLength = newItems.length;
+    const oldDataTotalLength = this.items.length;
+    const addedCount = newDataTotalLength - oldDataTotalLength;
 
-    switch (type) {
-      case "append":
-        {
-          newRawHts.set(this.rawHeights);
-          this.rawHeights = newRawHts;
-          this.ft?.initAll(this.rawHeights);
-        }
-        break;
-      case "prepend":
-        {
-          const offset = newLength - currentLength;
-          newRawHts.set(this.rawHeights, offset);
-          this.rawHeights = newRawHts;
-          this.ft?.initAll(this.rawHeights);
-        }
-        break;
+    if (addedCount <= 0) return;
+
+    // 1. Prepare the new rawHeights array
+    const newRawHts = new Float64Array(newDataTotalLength);
+
+    if (type === "append") {
+      // Copy OLD measured heights (the ones with the extra 68,023px)
+      newRawHts.set(this.rawHeights);
+      // Fill the NEW empty space at the end
+      newRawHts.fill(this.defaultHeight, oldDataTotalLength);
+    } else {
+      // Fill NEW space at the start
+      newRawHts.fill(this.defaultHeight, 0, addedCount);
+      // Shift OLD measured heights to the right
+      newRawHts.set(this.rawHeights, addedCount);
     }
+
+    // 2. Sync references
+    this.rawHeights = newRawHts;
+    this.items = newItems;
+
+    // 3. Rebuild the Tree from scratch (O(N))
+    this.ft.initAll(this.rawHeights);
+
+    // // 4. Handle WhatsApp Scroll Correction for Prepend
+    // if (type === "prepend") {
+    //   const addedPixelHeight = addedCount * this.defaultHeight;
+    //   this.scroller.scrollTo(this.scroller.scrollTop + addedPixelHeight);
+    // }
+
+    this.updateTotalVirtualHeight();
+    this.setScrollStateFromCurrentView();
   }
   goToPageIndex(pageIndex: number) {
     if (this.ft) {
