@@ -117,7 +117,8 @@ function generateCSVChunks() {
       // Only the 1,000,000th post gets the '1' (true)
       const isLast = cardNumber === TOTAL_POSTS ? 1 : 0;
 
-      const row = `${cardNumber},${escapedMessage},${likes},${comments},${reshares},${isLast}\n`;
+      const cleanMessage = rawMessage.replace(/\n/g, " ");
+      const row = `${cardNumber},"${cleanMessage.replace(/"/g, '""')}",${likes},${comments},${reshares},${isLast}\n`;
       stream.write(row);
     }
 
