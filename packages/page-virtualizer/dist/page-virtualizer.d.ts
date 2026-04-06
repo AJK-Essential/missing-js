@@ -13,6 +13,7 @@ export declare class MissingPageVirtualizer extends virtualiserKeyboardBase {
     arrowClickScrollTopDelta: number;
     needsTransition: boolean;
     fakeScrollbar?: MissingFakeScrollbar;
+    swipeScroll?: boolean;
     protected globalScrollY: number;
     private initialized;
     private virtualScrollHeight;
@@ -22,6 +23,7 @@ export declare class MissingPageVirtualizer extends virtualiserKeyboardBase {
     private hostClientHeight;
     private containerResizeObserver;
     private hostResizeObserver;
+    private hostSwipeListener;
     private fakeScrollbarDraggingListener;
     private fakeScrollbarDragReleaseListener;
     private fakeScrollbarDragStopListener;
@@ -37,6 +39,7 @@ export declare class MissingPageVirtualizer extends virtualiserKeyboardBase {
     private innerSlot;
     private scrollTimeout?;
     private scrollWaitTime;
+    private swipePhysics?;
     static styles: import('lit').CSSResult;
     render(): import('lit-html').TemplateResult<1>;
     initialize(): void;
@@ -81,5 +84,6 @@ export declare class MissingPageVirtualizer extends virtualiserKeyboardBase {
     getComputedLocalScrollY(): number;
     runAfterAllTransitions(transitioners: HTMLElement[]): Promise<void>;
     jumpRelease(): void;
+    onHostSwipe(e: Event): void;
 }
 //# sourceMappingURL=page-virtualizer.d.ts.map

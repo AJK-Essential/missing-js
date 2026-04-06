@@ -1,4 +1,4 @@
-# Missing JS
+![An animated monochromatic logo for Missing-JS, featuring pulsing industrial bars and breathing text](missing-js-logo.svg)
 
 **A high-performance suite of "missing" components for modern web developers.**
 

@@ -1,5 +1,5 @@
 {
-  "name": "@missing-js/page-virtualizer",
+  "name": "@missing-js/swipe-physics-emitter",
   "version": "1.0.0",
   "type": "module",
   "main": "dist/index.js",
@@ -15,14 +15,5 @@
     "build": "vite build",
     "dev": "vite build --watch",
     "clean": "rimraf dist && rimraf node_modules"
-  },
-  "devDependencies": {
-    "@missing-js/math": "*"
-  },
-  "peerDependencies": {
-    "lit": "^3.0.0",
-    "@missing-js/dimension-reporter": "*",
-    "@missing-js/fake-scrollbar": "*",
-    "@missing-js/swipe-physics-emitter": "*"
   }
 }

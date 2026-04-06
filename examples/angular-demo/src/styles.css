@@ -7,7 +7,10 @@ body {
   padding: 0;
   margin: 0;
   overflow: hidden;
-  background: linear-gradient(45deg, rgb(2 56 84), rgb(30, 31, 73), rgb(10 117 106));
+  background: linear-gradient(45deg, rgb(84 2 2), rgb(0 0 0), rgb(117 10 10));
+}
+body {
+  background: rgb(255 255 255 / 1%);
 }
 * {
   box-sizing: border-box;

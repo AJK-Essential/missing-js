@@ -7,6 +7,11 @@ import { FenwickTree } from "@missing-js/math";
 
 import { virtualiserKeyboardBase } from "./keyboard-base.js";
 
+import {
+  MissingSwipePhysicsEmitter,
+  MissingSwipePhysicsEvent,
+} from "@missing-js/swipe-physics-emitter";
+
 export type LoadEvent = CustomEvent<{
   indices: number[];
 }>;
@@ -38,6 +43,9 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
   @property({ type: Object })
   public fakeScrollbar?: MissingFakeScrollbar;
 
+  @property({ type: Boolean, reflect: true, attribute: "swipe-scroll" })
+  public swipeScroll?: boolean;
+
   @state()
   protected globalScrollY = 0;
 
@@ -63,6 +71,7 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
     this.containerResize.bind(this),
   );
   private hostResizeObserver = new ResizeObserver(this.hostResize.bind(this));
+  private hostSwipeListener = this.onHostSwipe.bind(this);
   private fakeScrollbarDraggingListener =
     this.onFakeScrollbarDragging.bind(this);
   private fakeScrollbarDragReleaseListener =
@@ -81,6 +90,7 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
   private innerSlot!: HTMLSlotElement;
   private scrollTimeout?: number;
   private scrollWaitTime = 250;
+  private swipePhysics?: MissingSwipePhysicsEmitter;
 
   static override styles = css`
     :host {
@@ -188,6 +198,7 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
       this.containerComputedStyle = getComputedStyle(this.container);
       this.containerResizeObserver.observe(this.container as HTMLElement);
       this.hostResizeObserver.observe(this);
+      this.addEventListener("swipe-detected", this.hostSwipeListener);
       this.dispatchEvent(
         new CustomEvent("load", {
           detail: {
@@ -215,6 +226,14 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
       this.fakeScrollbar.targetClientHeight = this.hostClientHeight;
       this.fakeScrollbar.targetScrollHeight = this.virtualScrollHeight;
     }
+    if (changedProperties.has("swipeScroll")) {
+      if (this.swipeScroll) {
+        this.swipePhysics = new MissingSwipePhysicsEmitter();
+        this.swipePhysics.emitFor(this);
+      } else {
+        this.swipePhysics?.destroy();
+      }
+    }
   }
 
   override disconnectedCallback(): void {
@@ -222,6 +241,7 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
       "dimension-changed",
       this.dimensionChangedListener,
     );
+    this.removeEventListener("swipe-detected", this.hostSwipeListener);
     if (this.fakeScrollbar) {
       this.fakeScrollbar.removeEventListener(
         "dragging",
@@ -806,5 +826,10 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
       this.updateMemoryWithNewHeights();
       this.setScrollStateFromCurrentView();
     }, this.scrollWaitTime);
+  }
+  onHostSwipe(e: Event) {
+    const swipeEvent = e as MissingSwipePhysicsEvent;
+    const scrollDelta = -swipeEvent.detail.deltaY;
+    this.slowScrollBy(scrollDelta, true);
   }
 }

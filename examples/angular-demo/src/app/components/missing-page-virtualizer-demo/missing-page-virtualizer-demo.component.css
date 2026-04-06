@@ -4,10 +4,26 @@
   height: 100%;
   position: relative;
   padding: 1rem;
+  padding-top: 0px;
+  justify-content: center;
+  align-items: center;
 }
 * {
   box-sizing: border-box;
 }
+.mid-card {
+  position: relative;
+  width: 75%;
+  display: flex;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+.virtualizer-holder {
+  width: 50%;
+  height: 100%;
+  padding: 1rem 0rem;
+}
+
 .page {
   display: flex;
   justify-content: center;
@@ -17,7 +33,7 @@
   padding: 0.5rem;
 }
 missing-page-virtualizer {
-  width: 50%;
+  width: 100%;
 }
 missing-fake-scrollbar.visible {
   display: initial;
@@ -42,16 +58,14 @@ missing-fake-scrollbar {
 }
 missing-fake-scrollbar::part(track) {
   --track-background: rgb(0 0 0 / 34%);
-  outline: 1px solid rgb(0 144 255 / 23%);
-  /* outline-offset: -1px; */
-  box-shadow: inset 0px 0px 16px 0px rgb(0 144 255 / 23%);
+  border-radius: 0.25rem;
 }
 feed-card {
   width: 100%;
 }
 .panel {
-  width: 25%;
-  /* background-color: rgba(0, 0, 0, 0.5); */
+  width: 50%;
+  background-color: rgba(0, 0, 0, 0.5);
   position: relative;
   padding: 1rem;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -62,9 +76,7 @@ feed-card {
   flex-direction: column;
   font-weight: 200;
 }
-.panel * {
-  font-weight: 500;
-}
+
 @keyframes blink-animation {
   0% {
     opacity: 1; /* Text is visible */
@@ -89,4 +101,42 @@ feed-card {
   justify-content: center;
   align-items: center;
   height: 50px;
+}
+.info-area p {
+  margin: 0;
+}
+
+@media only screen and (max-width: 600px) {
+  :host {
+    flex-direction: column;
+  }
+  .mid-card {
+    width: 100%;
+    flex-direction: column;
+  }
+  .virtualizer-holder {
+    width: 100%;
+  }
+  .panel,
+  missing-page-virtualizer {
+    width: 100%;
+  }
+  missing-fake-scrollbar {
+    transition: opacity 0.3s ease;
+    opacity: 0;
+    width: 0.25rem;
+  }
+  missing-fake-scrollbar.show-on-mobile-scroll {
+    opacity: 1;
+  }
+  missing-fake-scrollbar::part(thumb) {
+    --thumb-background: rgb(159 159 159);
+    width: 50%;
+    border-radius: 0.5rem;
+  }
+  missing-fake-scrollbar::part(track) {
+    --track-background: rgb(0 0 0 / 0%);
+    outline: none;
+    box-shadow: none;
+  }
 }

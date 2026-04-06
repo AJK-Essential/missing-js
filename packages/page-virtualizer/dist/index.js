@@ -1,5 +1,5 @@
-import { LitElement as w, css as y, html as b } from "lit";
-import { property as h, state as p, customElement as v } from "lit/decorators.js";
+import { LitElement as v, css as S, html as b } from "lit";
+import { property as h, state as f, customElement as y } from "lit/decorators.js";
 /**
  * Missing JS - @missing-js/page-virtualizer (Pro)
  * @license PolyForm Noncommercial 1.0.0
@@ -18,7 +18,7 @@ class T {
    * Bulk initialization in O(N) time.
    * Perfect for setting all pages to a 'defaultHeight' at startup.
    */
-  // Use this for PREPEND (Index shifts)
+  // Use this for PREPEND and APPEND (Index shifts)
   initAll(t) {
     t.length > this.size ? (this.size = t.length, this.tree = new Float64Array(this.size + 1)) : this.tree.fill(0), this.values = t;
     for (let e = 0; e < t.length; e++)
@@ -26,17 +26,6 @@ class T {
     for (let e = 1; e <= t.length; e++) {
       let s = e + (e & -e);
       s <= t.length && (this.tree[s] += this.tree[e]);
-    }
-  }
-  // Use this for APPEND (Index stability)
-  resize(t, e) {
-    if (t <= this.size) return;
-    const s = this.size, l = new Float64Array(t + 1), r = new Float64Array(t);
-    l.set(this.tree), r.set(this.values), r.fill(e, s), this.tree = l, this.values = r, this.size = t;
-    for (let o = s + 1; o <= this.size; o++) {
-      this.tree[o] += this.values[o - 1];
-      let a = o + (o & -o);
-      a <= this.size && (this.tree[a] += this.tree[o]);
     }
   }
   /**
@@ -47,9 +36,9 @@ class T {
     const s = e - this.values[t];
     if (s === 0) return;
     this.values[t] = e;
-    let l = t + 1;
-    for (; l <= this.size; )
-      this.tree[l] += s, l += l & -l;
+    let r = t + 1;
+    for (; r <= this.size; )
+      this.tree[r] += s, r += r & -r;
   }
   getCumulativeHeight(t) {
     let e = 0, s = t + 1;
@@ -59,10 +48,10 @@ class T {
   }
   findIndexOfPixel(t) {
     if (t < 0) return 0;
-    let e = 0, s = 0, l = 1 << Math.floor(Math.log2(this.size));
-    for (; l > 0; ) {
-      const r = e + l;
-      r <= this.size && s + this.tree[r] <= t && (e = r, s += this.tree[e]), l >>= 1;
+    let e = 0, s = 0, r = 1 << Math.floor(Math.log2(this.size));
+    for (; r > 0; ) {
+      const o = e + r;
+      o <= this.size && s + this.tree[o] <= t && (e = o, s += this.tree[e]), r >>= 1;
     }
     return e;
   }
@@ -74,11 +63,11 @@ class T {
   }
 }
 var k = Object.defineProperty, m = (i, t, e, s) => {
-  for (var l = void 0, r = i.length - 1, o; r >= 0; r--)
-    (o = i[r]) && (l = o(t, e, l) || l);
-  return l && k(t, e, l), l;
+  for (var r = void 0, o = i.length - 1, l; o >= 0; o--)
+    (l = i[o]) && (r = l(t, e, r) || r);
+  return r && k(t, e, r), r;
 };
-class u extends w {
+class u extends v {
   constructor() {
     super(...arguments), this.defaultTabbing = !1, this.defaultArrowUpNavigation = !1, this.defaultArrowDownNavigation = !1, this.defaultPageUpNavigation = !1, this.defaultPageDownNavigation = !1, this.keyboardIncrements = {
       arrowdown: 5,
@@ -99,51 +88,51 @@ class u extends w {
       "keydown",
       this.documentKeyboardDownListener
     ), this.defaultTabbing && this.addEventListener("focusin", async (t) => {
-      const e = this.getBoundingClientRect(), s = e.top, l = e.bottom, r = t.composedPath()[0];
+      const e = this.getBoundingClientRect(), s = e.top, r = e.bottom, o = t.composedPath()[0];
       if (this.tabbingElementSelector) {
-        let o = Array.from(
+        let l = Array.from(
           this.querySelectorAll(this.tabbingElementSelector)
         );
-        if (o.includes(r)) {
+        if (l.includes(o)) {
           this.scrollTop = 0;
           let a;
           if (this.tabPressed && !this.shiftPressed) {
-            if (t.preventDefault(), await this.runAfterTransitions(r), o.indexOf(r) !== o.length - 1) {
-              if (r.getBoundingClientRect().top < s) {
-                const g = o.find(
-                  (f) => f.getBoundingClientRect().top >= s
+            if (t.preventDefault(), await this.runAfterTransitions(o), l.indexOf(o) !== l.length - 1) {
+              if (o.getBoundingClientRect().top < s) {
+                const g = l.find(
+                  (p) => p.getBoundingClientRect().top >= s
                 );
                 g && g.focus();
                 return;
               }
               a = this.getNextScrollDelta(
-                r,
+                o,
                 "forwards",
                 s,
-                l
+                r
               );
             } else {
-              let d = r.getBoundingClientRect();
+              let d = o.getBoundingClientRect();
               a = d.top - this.clientHeight / 2 + d.height / 2;
             }
             this.tabPressed = !1, this.shiftPressed = !1, this.scrollByAmt(a), this.scrollCheck();
           } else if (this.tabPressed && this.shiftPressed) {
-            if (t.preventDefault(), await this.runAfterTransitions(r), o.indexOf(r) !== 0) {
-              if (r.getBoundingClientRect().bottom >= l) {
-                const g = o.findLast(
-                  (f) => f.getBoundingClientRect().bottom <= l
+            if (t.preventDefault(), await this.runAfterTransitions(o), l.indexOf(o) !== 0) {
+              if (o.getBoundingClientRect().bottom >= r) {
+                const g = l.findLast(
+                  (p) => p.getBoundingClientRect().bottom <= r
                 );
                 g && g.focus();
                 return;
               }
               a = this.getNextScrollDelta(
-                r,
+                o,
                 "backwards",
                 s,
-                l
+                r
               );
             } else {
-              let d = r.getBoundingClientRect();
+              let d = o.getBoundingClientRect();
               a = d.top - this.clientHeight / 2 + d.height / 2;
             }
             this.tabPressed = !1, this.shiftPressed = !1, this.scrollByAmt(a), this.scrollCheck();
@@ -152,16 +141,16 @@ class u extends w {
       }
     });
   }
-  getNextScrollDelta(t, e, s, l) {
-    let r = 0, o = t.getBoundingClientRect();
+  getNextScrollDelta(t, e, s, r) {
+    let o = 0, l = t.getBoundingClientRect();
     if (e === "forwards") {
-      const a = o.top < l && o.bottom <= l ? "completely-within" : o.top <= l && o.bottom > l ? "partially-within" : "out";
-      a === "completely-within" ? r = 0 : (a === "partially-within" || a === "out") && (o.height >= this.clientHeight ? r = o.top - s : r = a === "out" ? o.top - this.clientHeight / 2 + o.height / 2 : o.bottom - l);
+      const a = l.top < r && l.bottom <= r ? "completely-within" : l.top <= r && l.bottom > r ? "partially-within" : "out";
+      a === "completely-within" ? o = 0 : (a === "partially-within" || a === "out") && (l.height >= this.clientHeight ? o = l.top - s : o = a === "out" ? l.top - this.clientHeight / 2 + l.height / 2 : l.bottom - r);
     } else {
-      const a = o.bottom > s && o.top >= s ? "completely-within" : o.bottom >= s && o.top < s ? "partially-within" : "out";
-      a === "completely-within" ? r = 0 : (a === "partially-within" || a === "out") && (o.height >= this.clientHeight ? r = o.bottom - l : r = a === "out" ? o.top - this.clientHeight / 2 + o.height / 2 : o.top - s);
+      const a = l.bottom > s && l.top >= s ? "completely-within" : l.bottom >= s && l.top < s ? "partially-within" : "out";
+      a === "completely-within" ? o = 0 : (a === "partially-within" || a === "out") && (l.height >= this.clientHeight ? o = l.bottom - r : o = a === "out" ? l.top - this.clientHeight / 2 + l.height / 2 : l.top - s);
     }
-    return r;
+    return o;
   }
   disconnectedCallback() {
     this.removeEventListener("keydown", this.keyboardDownEventListener), window.removeEventListener("keyup", this.keyboardUpEventListener), document.body.removeEventListener(
@@ -201,8 +190,8 @@ class u extends w {
       await this.wait(this.tabbingItemTransitionTime);
       return;
     }
-    const e = window.getComputedStyle(t), s = parseFloat(e.transitionDuration) * 1e3, l = parseFloat(e.transitionDelay) * 1e3, r = s + l;
-    r > 0 && await this.wait(r + 20);
+    const e = window.getComputedStyle(t), s = parseFloat(e.transitionDuration) * 1e3, r = parseFloat(e.transitionDelay) * 1e3, o = s + r;
+    o > 0 && await this.wait(o + 20);
   }
   jumpToScrollTop(t) {
   }
@@ -259,16 +248,80 @@ m([
     attribute: "tabbing-item-transition-time"
   })
 ], u.prototype, "tabbingItemTransitionTime");
-var H = Object.defineProperty, C = Object.getOwnPropertyDescriptor, c = (i, t, e, s) => {
-  for (var l = s > 1 ? void 0 : s ? C(t, e) : t, r = i.length - 1, o; r >= 0; r--)
-    (o = i[r]) && (l = (s ? o(t, e, l) : o(l)) || l);
-  return s && l && H(t, e, l), l;
+/**
+ * Missing JS - @missing-js/swipe-physics-emitter
+ * @license MIT
+ * Copyright (c) 2026 Missing JS / AJK-Essential.
+ * ---------------------------------------------------------
+ * Licensed under the MIT License.
+ * Free for personal and commercial use.
+ */
+/**
+ * Missing JS - @missing-js/swipe-physics-emitter
+ * @license MIT
+ * Copyright (c) 2026 Missing JS / AJK-Essential.
+ * ---------------------------------------------------------
+ * Licensed under the MIT License.
+ * Free for personal and commercial use.
+ */
+class C {
+  constructor() {
+    this.friction = 0.88, this.velocityX = 0, this.velocityY = 0, this.isDragging = !1, this.lastX = 0, this.lastY = 0, this.lastTime = 0, this.startX = 0, this.startY = 0, this.startTime = 0, this.animationId = null, this.pointerMoveListener = this.onPointerMove.bind(this), this.pointerDownListener = this.onPointerDown.bind(this), this.pointerUpListener = this.onPointerUp.bind(this), this.physicsLoop = () => {
+      if (this.isDragging) return;
+      this.velocityX *= this.friction, this.velocityY *= this.friction;
+      const t = this.velocityX * 16, e = this.velocityY * 16;
+      this.dispatch(t, e, !1), (Math.abs(this.velocityX) > 0.05 || Math.abs(this.velocityY) > 0.05) && (this.animationId = requestAnimationFrame(this.physicsLoop));
+    };
+  }
+  emitFor(t) {
+    this.target = t, this.target.style.touchAction = "none", this.target.addEventListener("pointerdown", this.pointerDownListener);
+  }
+  stopMovement() {
+    this.animationId && (cancelAnimationFrame(this.animationId), this.animationId = null), this.velocityX = 0, this.velocityY = 0;
+  }
+  dispatch(t, e, s) {
+    if (!this.target) return;
+    const r = {
+      deltaX: t,
+      deltaY: e,
+      velocityX: this.velocityX,
+      velocityY: this.velocityY,
+      isDragging: s
+    }, o = new CustomEvent(
+      "swipe-detected",
+      {
+        detail: r,
+        bubbles: !0,
+        composed: !0
+      }
+    );
+    this.target.dispatchEvent(o);
+  }
+  onPointerDown(t) {
+    this.target && t.pointerType !== "mouse" && (this.stopMovement(), this.isDragging = !0, this.startX = t.clientX, this.startY = t.clientY, this.startTime = performance.now(), this.lastX = this.startX, this.lastY = this.startY, this.lastTime = this.startTime, this.target.setPointerCapture(t.pointerId), this.target.removeEventListener("pointermove", this.pointerMoveListener), this.target.removeEventListener("pointerup", this.pointerUpListener), this.target.addEventListener("pointermove", this.pointerMoveListener), this.target.addEventListener("pointerup", this.pointerUpListener));
+  }
+  onPointerMove(t) {
+    if (!this.isDragging) return;
+    const e = performance.now(), s = t.clientX - this.lastX, r = t.clientY - this.lastY, o = e - this.lastTime;
+    o > 0 && (this.velocityX = s / o, this.velocityY = r / o), this.dispatch(s, r, !0), this.lastX = t.clientX, this.lastY = t.clientY, this.lastTime = e;
+  }
+  onPointerUp(t) {
+    this.isDragging && this.target && (this.target.releasePointerCapture(t.pointerId), this.target.removeEventListener("pointermove", this.pointerMoveListener), this.target.removeEventListener("pointerup", this.pointerUpListener), this.isDragging = !1, Math.abs(t.clientX - this.startX), Math.abs(t.clientY - this.startY), performance.now() - this.startTime, this.animationId = requestAnimationFrame(this.physicsLoop));
+  }
+  destroy() {
+    this.target && (this.target.removeEventListener("pointerdown", this.pointerDownListener), this.target.removeEventListener("pointermove", this.pointerMoveListener), this.target.removeEventListener("pointerup", this.pointerUpListener), this.target = null), this.stopMovement();
+  }
+}
+var H = Object.defineProperty, L = Object.getOwnPropertyDescriptor, c = (i, t, e, s) => {
+  for (var r = s > 1 ? void 0 : s ? L(t, e) : t, o = i.length - 1, l; o >= 0; o--)
+    (l = i[o]) && (r = (s ? l(t, e, r) : l(r)) || r);
+  return s && r && H(t, e, r), r;
 };
 let n = class extends u {
   constructor() {
     super(...arguments), this.items = [], this.defaultHeight = 200 * 10, this.numOfItems = 2, this.uniqueSelector = "", this.arrowClickScrollTopDelta = 40, this.needsTransition = !1, this.globalScrollY = 0, this.initialized = !1, this.virtualScrollHeight = this.clientHeight, this.containerHeight = 100, this.translateY = "", this.startIndex = 0, this.hostClientHeight = this.clientHeight, this.containerResizeObserver = new ResizeObserver(
       this.containerResize.bind(this)
-    ), this.hostResizeObserver = new ResizeObserver(this.hostResize.bind(this)), this.fakeScrollbarDraggingListener = this.onFakeScrollbarDragging.bind(this), this.fakeScrollbarDragReleaseListener = this.onFakeScrollbarDragRelease.bind(this), this.fakeScrollbarDragStopListener = this.onFakeScrollbarDragStop.bind(this), this.dimensionChangedListener = this.dimensionChangedCB.bind(this), this.pauseUpdate = !1, this.scrolling = !1, this.localScrollY = 0, this.rawHeightUpdates = {}, this.scrollWaitTime = 250;
+    ), this.hostResizeObserver = new ResizeObserver(this.hostResize.bind(this)), this.hostSwipeListener = this.onHostSwipe.bind(this), this.fakeScrollbarDraggingListener = this.onFakeScrollbarDragging.bind(this), this.fakeScrollbarDragReleaseListener = this.onFakeScrollbarDragRelease.bind(this), this.fakeScrollbarDragStopListener = this.onFakeScrollbarDragStop.bind(this), this.dimensionChangedListener = this.dimensionChangedCB.bind(this), this.pauseUpdate = !1, this.scrolling = !1, this.localScrollY = 0, this.rawHeightUpdates = {}, this.scrollWaitTime = 250;
   }
   render() {
     return b`
@@ -311,7 +364,7 @@ let n = class extends u {
         this.fakeScrollbarDragStopListener
       )), this.updateTotalVirtualHeight();
       const i = this.renderRoot;
-      this.container = i.querySelector(".container"), this.innerSlot = i.querySelector("slot"), this.containerComputedStyle = getComputedStyle(this.container), this.containerResizeObserver.observe(this.container), this.hostResizeObserver.observe(this), this.dispatchEvent(
+      this.container = i.querySelector(".container"), this.innerSlot = i.querySelector("slot"), this.containerComputedStyle = getComputedStyle(this.container), this.containerResizeObserver.observe(this.container), this.hostResizeObserver.observe(this), this.addEventListener("swipe-detected", this.hostSwipeListener), this.dispatchEvent(
         new CustomEvent("load", {
           detail: {
             indices: [this.startIndex, this.startIndex + this.numOfItems - 1]
@@ -325,13 +378,14 @@ let n = class extends u {
     });
   }
   updated(i) {
-    super.updated(i), this.fakeScrollbar && (i.has("hostClientHeight") || i.has("virtualScrollHeight")) && (this.fakeScrollbar.targetClientHeight = this.hostClientHeight, this.fakeScrollbar.targetScrollHeight = this.virtualScrollHeight);
+    var t;
+    super.updated(i), this.fakeScrollbar && (i.has("hostClientHeight") || i.has("virtualScrollHeight")) && (this.fakeScrollbar.targetClientHeight = this.hostClientHeight, this.fakeScrollbar.targetScrollHeight = this.virtualScrollHeight), i.has("swipeScroll") && (this.swipeScroll ? (this.swipePhysics = new C(), this.swipePhysics.emitFor(this)) : (t = this.swipePhysics) == null || t.destroy());
   }
   disconnectedCallback() {
     this.removeEventListener(
       "dimension-changed",
       this.dimensionChangedListener
-    ), this.fakeScrollbar && (this.fakeScrollbar.removeEventListener(
+    ), this.removeEventListener("swipe-detected", this.hostSwipeListener), this.fakeScrollbar && (this.fakeScrollbar.removeEventListener(
       "dragging",
       this.fakeScrollbarDraggingListener
     ), this.fakeScrollbar.removeEventListener(
@@ -351,8 +405,8 @@ let n = class extends u {
   setScrollTopAndTransform(i, t = !0) {
     var e;
     if (this.ft) {
-      const s = (e = this.ft) == null ? void 0 : e.findIndexOfPixel(i), l = s !== 0 ? this.ft.getCumulativeHeight(s - 1) : 0, r = -(i - l);
-      this.translateY = `${r}px`, this.startIndex = s, t && this.dispatchEvent(
+      const s = (e = this.ft) == null ? void 0 : e.findIndexOfPixel(i), r = s !== 0 ? this.ft.getCumulativeHeight(s - 1) : 0, o = -(i - r);
+      this.translateY = `${o}px`, this.startIndex = s, t && this.dispatchEvent(
         new CustomEvent("load", {
           detail: {
             indices: [this.startIndex, this.startIndex + this.numOfItems - 1]
@@ -395,7 +449,7 @@ let n = class extends u {
         this.classList.add("by-pass"), this.pauseUpdate = !0;
         const s = this.querySelector(
           this.uniqueSelector
-        ).getBoundingClientRect().height, l = this.containerHeight - s, o = this.localScrollY + i - s - l, a = this.startIndex + 1, d = l + o;
+        ).getBoundingClientRect().height, r = this.containerHeight - s, l = this.localScrollY + i - s - r, a = this.startIndex + 1, d = r + l;
         this.translateY = `${-d}px`, this.startIndex = a, this.dispatchEvent(
           new CustomEvent("load", {
             detail: {
@@ -419,10 +473,10 @@ let n = class extends u {
         });
       } else if (this.direction === "UP" && this.localScrollY + i <= 0 && this.startIndex - 1 >= 0) {
         this.classList.add("by-pass"), this.pauseUpdate = !0;
-        const s = this.querySelectorAll(this.uniqueSelector), r = s[s.length - 1].getBoundingClientRect().height, o = this.containerHeight - r, g = this.containerHeight - this.localScrollY + Math.abs(i) - r - o, f = o + g;
-        this.translateY = `calc(-100% + ${f}px)`;
-        const S = this.startIndex - 1;
-        this.startIndex = S, this.dispatchEvent(
+        const s = this.querySelectorAll(this.uniqueSelector), o = s[s.length - 1].getBoundingClientRect().height, l = this.containerHeight - o, g = this.containerHeight - this.localScrollY + Math.abs(i) - o - l, p = l + g;
+        this.translateY = `calc(-100% + ${p}px)`;
+        const w = this.startIndex - 1;
+        this.startIndex = w, this.dispatchEvent(
           new CustomEvent("load", {
             detail: {
               indices: [this.startIndex, this.startIndex + this.numOfItems - 1]
@@ -432,11 +486,11 @@ let n = class extends u {
           [
             // Keyframes
             {
-              transform: `translateY(calc(-100% + ${f + i}px))`
+              transform: `translateY(calc(-100% + ${p + i}px))`
             },
             // Start
             {
-              transform: `translateY(calc(-100% + ${f}px))`
+              transform: `translateY(calc(-100% + ${p}px))`
             }
             // End
           ],
@@ -469,10 +523,10 @@ let n = class extends u {
   addNewData(i, t) {
     if (!this.ft) return;
     this.updateMemoryWithNewHeights();
-    const e = t.length, s = this.items.length, l = e - s;
-    if (l <= 0) return;
-    const r = new Float64Array(e);
-    i === "append" ? (r.set(this.rawHeights), r.fill(this.defaultHeight, s)) : (r.fill(this.defaultHeight, 0, l), r.set(this.rawHeights, l)), this.rawHeights = r, this.items = t, this.ft.initAll(this.rawHeights), this.updateTotalVirtualHeight(), this.setScrollStateFromCurrentView();
+    const e = t.length, s = this.items.length, r = e - s;
+    if (r <= 0) return;
+    const o = new Float64Array(e);
+    i === "append" ? (o.set(this.rawHeights), o.fill(this.defaultHeight, s)) : (o.fill(this.defaultHeight, 0, r), o.set(this.rawHeights, r)), this.rawHeights = o, this.items = t, this.ft.initAll(this.rawHeights), this.updateTotalVirtualHeight(), this.setScrollStateFromCurrentView();
   }
   goToPageIndex(i) {
     if (this.ft) {
@@ -490,13 +544,13 @@ let n = class extends u {
     }
   }
   jumpToScrollTop(i, t = !0, e = !0) {
-    var l;
+    var r;
     this.scrollTimeout && clearTimeout(this.scrollTimeout), this.classList.add("by-pass"), this.scrollTop = 0;
     const s = Math.min(
       Math.max(0, i),
       this.virtualScrollHeight - this.clientHeight
     );
-    this.classList.add("by-pass"), this.pauseUpdate = !1, this.scrolling = !0, this.globalScrollY = s, this.setScrollTopAndTransform(s, e), t && ((l = this.fakeScrollbar) == null || l.setToScrollTop(s));
+    this.classList.add("by-pass"), this.pauseUpdate = !1, this.scrolling = !0, this.globalScrollY = s, this.setScrollTopAndTransform(s, e), t && ((r = this.fakeScrollbar) == null || r.setToScrollTop(s));
   }
   getCurrentScrollTop() {
     return this.globalScrollY;
@@ -591,8 +645,8 @@ let n = class extends u {
   onPageResize(i, t) {
     var e, s;
     if (this.ft) {
-      const l = t.height;
-      this.scrolling ? (this.rawHeightUpdates[i] = l, this.updateTotalVirtualHeight()) : (this.updateMemoryWithNewHeights(), (e = this.ft) == null || e.update(i, l), this.updateTotalVirtualHeight(), this.localScrollY = this.getComputedLocalScrollY(), this.globalScrollY = (this.startIndex > 0 ? this.ft.getCumulativeHeight(this.startIndex - 1) : 0) + this.localScrollY, (s = this.fakeScrollbar) == null || s.setToScrollTop(this.globalScrollY));
+      const r = t.height;
+      this.scrolling ? (this.rawHeightUpdates[i] = r, this.updateTotalVirtualHeight()) : (this.updateMemoryWithNewHeights(), (e = this.ft) == null || e.update(i, r), this.updateTotalVirtualHeight(), this.localScrollY = this.getComputedLocalScrollY(), this.globalScrollY = (this.startIndex > 0 ? this.ft.getCumulativeHeight(this.startIndex - 1) : 0) + this.localScrollY, (s = this.fakeScrollbar) == null || s.setToScrollTop(this.globalScrollY));
     }
   }
   onElementResize(i) {
@@ -605,8 +659,8 @@ let n = class extends u {
         flatten: !0
       });
       this.allStable(s).then(() => {
-        var l;
-        this.updateMemoryWithNewHeights(), this.globalScrollY = (this.startIndex > 0 ? this.ft.getCumulativeHeight(this.startIndex - 1) : 0) + this.localScrollY, (l = this.fakeScrollbar) == null || l.setToScrollTop(this.globalScrollY);
+        var r;
+        this.updateMemoryWithNewHeights(), this.globalScrollY = (this.startIndex > 0 ? this.ft.getCumulativeHeight(this.startIndex - 1) : 0) + this.localScrollY, (r = this.fakeScrollbar) == null || r.setToScrollTop(this.globalScrollY);
       });
     }
   }
@@ -624,8 +678,12 @@ let n = class extends u {
       this.scrolling = !1, this.updateMemoryWithNewHeights(), this.setScrollStateFromCurrentView();
     }, this.scrollWaitTime);
   }
+  onHostSwipe(i) {
+    const e = -i.detail.deltaY;
+    this.slowScrollBy(e, !0);
+  }
 };
-n.styles = y`
+n.styles = S`
     :host {
       display: block;
       width: 100%;
@@ -676,19 +734,22 @@ c([
   h({ type: Object })
 ], n.prototype, "fakeScrollbar", 2);
 c([
-  p()
+  h({ type: Boolean, reflect: !0, attribute: "swipe-scroll" })
+], n.prototype, "swipeScroll", 2);
+c([
+  f()
 ], n.prototype, "globalScrollY", 2);
 c([
-  p()
+  f()
 ], n.prototype, "initialized", 2);
 c([
-  p()
+  f()
 ], n.prototype, "virtualScrollHeight", 2);
 c([
-  p()
+  f()
 ], n.prototype, "containerHeight", 2);
 c([
-  p()
+  f()
 ], n.prototype, "translateY", 2);
 c([
   h({ type: Number, reflect: !0 })
@@ -697,7 +758,7 @@ c([
   h({ type: Number, reflect: !0 })
 ], n.prototype, "hostClientHeight", 2);
 n = c([
-  v("missing-page-virtualizer")
+  y("missing-page-virtualizer")
 ], n);
 export {
   n as MissingPageVirtualizer
