@@ -46,6 +46,13 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
   @property({ type: Boolean, reflect: true, attribute: "swipe-scroll" })
   public swipeScroll?: boolean;
 
+  @property({
+    type: Number,
+    reflect: true,
+    attribute: "swipe-delta-multiplier",
+  })
+  public swipeDeltaMultiplier = 1;
+
   @state()
   protected globalScrollY = 0;
 
@@ -72,6 +79,7 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
   );
   private hostResizeObserver = new ResizeObserver(this.hostResize.bind(this));
   private hostSwipeListener = this.onHostSwipe.bind(this);
+  private hostSwipeStoppedListener = this.onHostSwipeStopped.bind(this);
   private fakeScrollbarDraggingListener =
     this.onFakeScrollbarDragging.bind(this);
   private fakeScrollbarDragReleaseListener =
@@ -199,6 +207,7 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
       this.containerResizeObserver.observe(this.container as HTMLElement);
       this.hostResizeObserver.observe(this);
       this.addEventListener("swipe-detected", this.hostSwipeListener);
+      this.addEventListener("swipe-stopped", this.hostSwipeStoppedListener);
       this.dispatchEvent(
         new CustomEvent("load", {
           detail: {
@@ -242,6 +251,7 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
       this.dimensionChangedListener,
     );
     this.removeEventListener("swipe-detected", this.hostSwipeListener);
+    this.removeEventListener("swipe-stopped", this.hostSwipeStoppedListener);
     if (this.fakeScrollbar) {
       this.fakeScrollbar.removeEventListener(
         "dragging",
@@ -527,6 +537,7 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
 
     this.updateTotalVirtualHeight();
     this.setScrollStateFromCurrentView();
+    this.fakeScrollbar?.setToScrollTop(this.globalScrollY);
   }
   goToPageIndex(pageIndex: number) {
     if (this.ft) {
@@ -828,8 +839,57 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
     }, this.scrollWaitTime);
   }
   onHostSwipe(e: Event) {
+    this.scrollTop = 0;
+    if (this.fakeScrollbar?.dragging) {
+      e.preventDefault();
+      return;
+    }
     const swipeEvent = e as MissingSwipePhysicsEvent;
-    const scrollDelta = -swipeEvent.detail.deltaY;
-    this.slowScrollBy(scrollDelta, true);
+    const scrollDelta = -swipeEvent.detail.deltaY * this.swipeDeltaMultiplier;
+    // this.slowScrollBy(scrollDelta, true);
+    {
+      this.scrolling = true;
+      // requestAnimationFrame(() => {
+      this.updateMemoryWithNewHeights();
+      this.setScrollStateFromCurrentView();
+      // this.runAfterAllSubTransitions().then(() => {
+      // this.allStable().then(() => {
+      // this.updateMemoryWithNewHeights();
+      // this.setScrollStateFromCurrentView();
+      this.stableJumpTo(this.globalScrollY + scrollDelta);
+      // });
+      // this.updateMemoryWithNewHeights();
+      // this.setScrollStateFromCurrentView();
+      // });
+      // });
+    }
+    this.dispatchEvent(new CustomEvent("scrolling"));
+  }
+  onHostSwipeStopped() {
+    this.scrollTop = 0;
+    console.log("swipe-stopped");
+    if (this.tickFrame) {
+      cancelAnimationFrame(this.tickFrame);
+    }
+    if (this.scrollTimeout) {
+      clearTimeout(this.scrollTimeout);
+    }
+    this.updateMemoryWithNewHeights();
+    this.setScrollStateFromCurrentView();
+    // this.allStable().then(() => {
+    //   if (this.tickFrame) {
+    //     cancelAnimationFrame(this.tickFrame);
+    //   }
+    //   if (this.scrollTimeout) {
+    //     clearTimeout(this.scrollTimeout);
+    //   }
+    this.scrollTimeout = setTimeout(() => {
+      console.log("reached here");
+      this.scrolling = false;
+      this.updateMemoryWithNewHeights();
+      this.setScrollStateFromCurrentView();
+      this.dispatchEvent(new CustomEvent("scroll-stopped"));
+    }, this.scrollWaitTime);
+    // });
   }
 }

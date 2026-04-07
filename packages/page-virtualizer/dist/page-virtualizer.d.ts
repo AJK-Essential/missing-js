@@ -14,6 +14,7 @@ export declare class MissingPageVirtualizer extends virtualiserKeyboardBase {
     needsTransition: boolean;
     fakeScrollbar?: MissingFakeScrollbar;
     swipeScroll?: boolean;
+    swipeDeltaMultiplier: number;
     protected globalScrollY: number;
     private initialized;
     private virtualScrollHeight;
@@ -24,6 +25,7 @@ export declare class MissingPageVirtualizer extends virtualiserKeyboardBase {
     private containerResizeObserver;
     private hostResizeObserver;
     private hostSwipeListener;
+    private hostSwipeStoppedListener;
     private fakeScrollbarDraggingListener;
     private fakeScrollbarDragReleaseListener;
     private fakeScrollbarDragStopListener;
@@ -85,5 +87,6 @@ export declare class MissingPageVirtualizer extends virtualiserKeyboardBase {
     runAfterAllTransitions(transitioners: HTMLElement[]): Promise<void>;
     jumpRelease(): void;
     onHostSwipe(e: Event): void;
+    onHostSwipeStopped(): void;
 }
 //# sourceMappingURL=page-virtualizer.d.ts.map
