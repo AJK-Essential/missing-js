@@ -74,6 +74,7 @@ export class MissingFakeScrollbar extends LitElement {
       display: flex;
     }
     .thumb {
+      touch-action: none;
       width: 100%;
       min-height: 2rem;
       height: var(--thumb-height);
@@ -102,7 +103,7 @@ export class MissingFakeScrollbar extends LitElement {
     return html`
       <div
         class="up-arrow"
-        @mousedown="${() => {
+        @pointerdown="${() => {
           this.changeScrollTop(-this.arrowClickScrollTopDelta);
         }}"
       >
@@ -123,7 +124,7 @@ export class MissingFakeScrollbar extends LitElement {
           --thumb-top: ${this.thumbTop}px
           "
           @pointerdown="${(e: PointerEvent) => {
-            if (e.pointerType === "mouse" && this.thumb) {
+            if (this.thumb) {
               e.preventDefault();
               this.thumb.setPointerCapture(e.pointerId);
               this.initialiseMouseDown(e);
@@ -133,7 +134,7 @@ export class MissingFakeScrollbar extends LitElement {
       </div>
       <div
         class="down-arrow"
-        @mousedown="${() => {
+        @pointerdown="${() => {
           this.changeScrollTop(this.arrowClickScrollTopDelta);
         }}"
       >
@@ -204,6 +205,7 @@ export class MissingFakeScrollbar extends LitElement {
   }
 
   private mouseMoveCB(e: PointerEvent) {
+    e.preventDefault();
     this.thumbTop = e.clientY - this.mouseDownOffsetY;
     this.reconfigureThumbSize();
     const restOfTrack = this.trackHeight - this.computedThumbSize;

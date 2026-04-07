@@ -176,11 +176,11 @@ function st(t, r, e) {
     try {
       u(n[h](d));
     } catch (p) {
-      y(o[0][3], p);
+      b(o[0][3], p);
     }
   }
   function u(h) {
-    h.value instanceof w ? Promise.resolve(h.value.v).then(l, v) : y(o[0][2], h);
+    h.value instanceof w ? Promise.resolve(h.value.v).then(l, v) : b(o[0][2], h);
   }
   function l(h) {
     c("next", h);
@@ -188,7 +188,7 @@ function st(t, r, e) {
   function v(h) {
     c("throw", h);
   }
-  function y(h, d) {
+  function b(h, d) {
     h(d), o.shift(), o.length && c(o[0][0], o[0][1]);
   }
 }
@@ -273,7 +273,7 @@ var _ = function() {
       if (v) {
         this._finalizers = null;
         try {
-          for (var y = k(v), h = y.next(); !h.done; h = y.next()) {
+          for (var b = k(v), h = b.next(); !h.done; h = b.next()) {
             var d = h.value;
             try {
               F(d);
@@ -285,7 +285,7 @@ var _ = function() {
           n = { error: p };
         } finally {
           try {
-            h && !h.done && (i = y.return) && i.call(y);
+            h && !h.done && (i = b.return) && i.call(b);
           } finally {
             if (n) throw n.error;
           }
@@ -460,7 +460,7 @@ var g = function() {
     var e = new t();
     return e.source = this, e.operator = r, e;
   }, t.prototype.subscribe = function(r, e, n) {
-    var i = this, o = bt(r) ? r : new R(r, e, n);
+    var i = this, o = yt(r) ? r : new R(r, e, n);
     return ht(function() {
       var s = i, a = s.operator, c = s.source;
       o.add(a ? a.call(o, c) : c ? i._subscribe(o) : i._trySubscribe(o));
@@ -516,11 +516,11 @@ function $(t) {
   var r;
   return (r = t ?? at.Promise) !== null && r !== void 0 ? r : Promise;
 }
-function yt(t) {
+function bt(t) {
   return t && f(t.next) && f(t.error) && f(t.complete);
 }
-function bt(t) {
-  return t && t instanceof U || yt(t) && W(t);
+function yt(t) {
+  return t && t instanceof U || bt(t) && W(t);
 }
 function gt(t) {
   return f(t == null ? void 0 : t.lift);
@@ -858,7 +858,7 @@ function qt(t) {
   });
 }
 function $t(t, r, e, n, i, o, s, a) {
-  var c = [], u = 0, l = 0, v = !1, y = function() {
+  var c = [], u = 0, l = 0, v = !1, b = function() {
     v && !c.length && !u && r.complete();
   }, h = function(p) {
     return u < n ? d(p) : c.push(p);
@@ -878,14 +878,14 @@ function $t(t, r, e, n, i, o, s, a) {
             s || d(P);
           }; c.length && u < n; )
             E();
-          y();
+          b();
         } catch (P) {
           r.error(P);
         }
     }));
   };
   return t.subscribe(I(r, h, function() {
-    v = !0, y();
+    v = !0, b();
   })), function() {
   };
 }
@@ -966,7 +966,7 @@ function Xt(t, r) {
     }));
   });
 }
-var Zt = Object.defineProperty, Nt = Object.getOwnPropertyDescriptor, b = (t, r, e, n) => {
+var Zt = Object.defineProperty, Nt = Object.getOwnPropertyDescriptor, y = (t, r, e, n) => {
   for (var i = n > 1 ? void 0 : n ? Nt(r, e) : r, o = t.length - 1, s; o >= 0; o--)
     (s = t[o]) && (i = (n ? s(r, e, i) : s(i)) || i);
   return n && i && Zt(r, e, i), i;
@@ -979,7 +979,7 @@ let m = class extends rt {
     return nt`
       <div
         class="up-arrow"
-        @mousedown="${() => {
+        @pointerdown="${() => {
       this.changeScrollTop(-this.arrowClickScrollTopDelta);
     }}"
       >
@@ -998,13 +998,13 @@ let m = class extends rt {
           --thumb-top: ${this.thumbTop}px
           "
           @pointerdown="${(t) => {
-      t.pointerType === "mouse" && this.thumb && (t.preventDefault(), this.thumb.setPointerCapture(t.pointerId), this.initialiseMouseDown(t));
+      this.thumb && (t.preventDefault(), this.thumb.setPointerCapture(t.pointerId), this.initialiseMouseDown(t));
     }}"
         ></div>
       </div>
       <div
         class="down-arrow"
-        @mousedown="${() => {
+        @pointerdown="${() => {
       this.changeScrollTop(this.arrowClickScrollTopDelta);
     }}"
       >
@@ -1041,7 +1041,7 @@ let m = class extends rt {
     this.trackHeight = r.height, this.trackOffset = r.top, this.dragging = !0, this.mouseDownOffsetY = t.clientY - this.thumb.getBoundingClientRect().top, this.thumb && (this.thumb.removeEventListener("pointermove", this.mouseMoveListener), this.thumb.removeEventListener("pointerup", this.mouseUpListener), this.thumb.addEventListener("pointermove", this.mouseMoveListener), this.thumb.addEventListener("pointerup", this.mouseUpListener));
   }
   mouseMoveCB(t) {
-    this.thumbTop = t.clientY - this.mouseDownOffsetY, this.reconfigureThumbSize();
+    t.preventDefault(), this.thumbTop = t.clientY - this.mouseDownOffsetY, this.reconfigureThumbSize();
     const r = this.trackHeight - this.computedThumbSize, e = this.thumbTop - this.trackOffset;
     this.computedTargetScrollTop = e / r * (this.targetScrollHeight - this.targetClientHeight), this.computedTargetScrollTop = Math.min(
       Math.max(0, this.computedTargetScrollTop),
@@ -1106,6 +1106,7 @@ m.styles = et`
       display: flex;
     }
     .thumb {
+      touch-action: none;
       width: 100%;
       min-height: 2rem;
       height: var(--thumb-height);
@@ -1129,35 +1130,35 @@ m.styles = et`
       background-color: black;
     }
   `;
-b([
+y([
   C({ type: Number, reflect: !0 })
 ], m.prototype, "targetScrollHeight", 2);
-b([
+y([
   C({ type: Number, reflect: !0 })
 ], m.prototype, "targetClientHeight", 2);
-b([
+y([
   C({
     type: Number,
     reflect: !0,
     attribute: "arrow-click-scroll-delta"
   })
 ], m.prototype, "arrowClickScrollTopDelta", 2);
-b([
+y([
   C({ type: Number, reflect: !0 })
 ], m.prototype, "computedTargetScrollTop", 2);
-b([
+y([
   L()
 ], m.prototype, "trackOffset", 2);
-b([
+y([
   L()
 ], m.prototype, "trackHeight", 2);
-b([
+y([
   L()
 ], m.prototype, "computedThumbSize", 2);
-b([
+y([
   L()
 ], m.prototype, "thumbTop", 2);
-m = b([
+m = y([
   it("missing-fake-scrollbar")
 ], m);
 export {
