@@ -35,13 +35,9 @@
 missing-page-virtualizer {
   width: 100%;
 }
-missing-fake-scrollbar.visible {
-  display: initial;
-}
 missing-fake-scrollbar {
   top: 0px;
   right: 0px;
-  display: none;
 }
 missing-fake-scrollbar::part(thumb) {
   --thumb-background: rgb(159 159 159);
@@ -122,9 +118,9 @@ feed-card {
     width: 100%;
   }
   missing-fake-scrollbar {
-    transition: opacity 0.3s ease;
-    opacity: 0;
-    width: 0.25rem;
+    --scrollbar-width: 0.25rem;
+    right: -9px;
+    height: calc(100% - var(--panel-height, 0px) - 1rem);
   }
   missing-fake-scrollbar.show-on-mobile-scroll {
     opacity: 1;
@@ -133,6 +129,9 @@ feed-card {
     --thumb-background: rgb(159 159 159);
     width: 50%;
     border-radius: 0.5rem;
+  }
+  missing-fake-scrollbar::part(thumb):hover {
+    width: 100%;
   }
   missing-fake-scrollbar::part(track) {
     --track-background: rgb(0 0 0 / 0%);

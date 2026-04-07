@@ -17,6 +17,7 @@
       (scrolling)="updatePageData(true)"
       (scroll-stopped)="updatePageData(false)"
       swipe-scroll
+      [swipeDeltaMultiplier]="swipeDeltaFromInput"
     >
       @for (page of renderingArray; track page.pageIndex) {
         @if (page.pageIndex <= items.length - 1) {
@@ -70,16 +71,40 @@
       }
     </missing-page-virtualizer>
   </div>
-  <div class="panel info-area">
-    @if (renderingArray?.length) {
-      <p>{{ isScrolling ? 'Scrolling' : 'Not Scrolling' }}</p>
-      <p>Showing Items {{ startItem }} - {{ endItem }}</p>
-    } @else {
-      <div class="blink">Please wait !!</div>
-    }
-  </div>
-  <missing-fake-scrollbar
-    [class.show-on-mobile-scroll]="isScrolling"
-    #fakeScrollbar
-  ></missing-fake-scrollbar>
+  <missing-dimension-reporter (dimension-changed)="storePanelHeight($event)">
+    <div class="panel info-area">
+      @if (renderingArray?.length) {
+        <p>{{ isScrolling ? 'Scrolling' : 'Not Scrolling' }}</p>
+        <p>Showing Items {{ startItem }} - {{ endItem }}</p>
+        <hr style="width: 100%" />
+        <label for="rng" style="font-size: small">Adjust Swipe Distance Multiplier</label>
+        <input
+          type="number"
+          value="1"
+          id="rng"
+          style="
+            /* width: 4ch; */
+            padding: 4px;
+            flex: none;
+            background-color: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: inherit;
+            font-family: inherit;
+            text-align: center;
+            max-width: 100px;
+          "
+          (input)="adjustScrollerSwipeDelta($event)"
+        />
+        <p style="font-size: smaller">
+          Tab through the cards and PageUp or PageDown as well if you have access to a keyboard
+        </p>
+        <p style="font-size: smaller">
+          Try dragging the scrollbar as well even if its a touch device
+        </p>
+      } @else {
+        <div class="blink">Please wait !!</div>
+      }
+    </div>
+  </missing-dimension-reporter>
+  <missing-fake-scrollbar #fakeScrollbar></missing-fake-scrollbar>
 </div>

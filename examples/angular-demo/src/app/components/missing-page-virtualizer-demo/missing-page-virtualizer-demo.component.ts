@@ -16,6 +16,7 @@ import '@missing-js/dimension-reporter';
 import '@missing-js/fake-scrollbar';
 import { LoadEvent, MissingPageVirtualizer } from '@missing-js/page-virtualizer';
 import { MissingFakeScrollbar } from '@missing-js/fake-scrollbar';
+import { MissingDimensionReporter } from '@missing-js/dimension-reporter';
 
 @Component({
   selector: 'missing-page-virtualizer-demo',
@@ -49,6 +50,7 @@ export class MissingPageVirtualizerDemo implements AfterViewInit {
   allPosts: Message[] = [];
 
   isScrolling = false;
+  swipeDeltaFromInput = 1;
 
   constructor(elRef: ElementRef) {
     this.hostElement = elRef.nativeElement;
@@ -138,6 +140,20 @@ export class MissingPageVirtualizerDemo implements AfterViewInit {
   loadMoreItems() {
     this.loadMore().then(() => {
       this.scroller?.addNewData('append', this.items);
+      this.scroller?.allStable().then(() => {
+        this.fakeScrollbar?.requestUpdate();
+      });
     });
+  }
+  storePanelHeight(e: Event) {
+    setTimeout(() => {
+      const target = e.target as MissingDimensionReporter;
+      this.hostElement.style.setProperty('--panel-height', `${target.height}px`);
+    }, 0);
+    e.stopPropagation();
+    console.log(e);
+  }
+  adjustScrollerSwipeDelta(e: Event) {
+    this.swipeDeltaFromInput = parseFloat((e.target as HTMLInputElement).value);
   }
 }
