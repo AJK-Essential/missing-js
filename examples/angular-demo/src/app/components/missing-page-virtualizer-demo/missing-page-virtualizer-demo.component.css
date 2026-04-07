@@ -60,7 +60,7 @@ feed-card {
   width: 100%;
 }
 .panel {
-  width: 50%;
+  width: 100%;
   background-color: rgba(0, 0, 0, 0.5);
   position: relative;
   padding: 1rem;
@@ -71,6 +71,7 @@ feed-card {
   color: rgba(255, 255, 255, 0.4);
   flex-direction: column;
   font-weight: 200;
+  height: 100%;
 }
 
 @keyframes blink-animation {
@@ -100,6 +101,10 @@ feed-card {
 }
 .info-area p {
   margin: 0;
+}
+.panel-dim-reporter {
+  width: 50%;
+  height: 100%;
 }
 
 @media only screen and (max-width: 600px) {
@@ -137,5 +142,12 @@ feed-card {
     --track-background: rgb(0 0 0 / 0%);
     outline: none;
     box-shadow: none;
+  }
+  .panel {
+    height: fit-content;
+  }
+  .panel-dim-reporter {
+    width: 100%;
+    height: fit-content;
   }
 }

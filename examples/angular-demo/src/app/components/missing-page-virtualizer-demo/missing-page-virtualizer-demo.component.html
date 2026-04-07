@@ -71,13 +71,18 @@
       }
     </missing-page-virtualizer>
   </div>
-  <missing-dimension-reporter (dimension-changed)="storePanelHeight($event)">
+  <missing-dimension-reporter
+    class="panel-dim-reporter"
+    (dimension-changed)="storePanelHeight($event)"
+  >
     <div class="panel info-area">
       @if (renderingArray?.length) {
         <p>{{ isScrolling ? 'Scrolling' : 'Not Scrolling' }}</p>
         <p>Showing Items {{ startItem }} - {{ endItem }}</p>
         <hr style="width: 100%" />
-        <label for="rng" style="font-size: small">Adjust Swipe Distance Multiplier</label>
+        <label for="rng" style="font-size: small"
+          >Adjust Swipe Distance Multiplier (doesn't work on desktop)</label
+        >
         <input
           type="number"
           value="1"
