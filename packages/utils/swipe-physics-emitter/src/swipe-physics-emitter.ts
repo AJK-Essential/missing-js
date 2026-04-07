@@ -9,7 +9,7 @@ export interface SwipePhysicsDetail {
 }
 
 export class MissingSwipePhysicsEmitter {
-  public friction: number = 0.88;
+  public friction: number = 0.95;
 
   private velocityX: number = 0;
   private velocityY: number = 0;
@@ -121,12 +121,14 @@ export class MissingSwipePhysicsEmitter {
     const moveDistY = Math.abs(e.clientY - this.startY);
     const elapsed = performance.now() - this.startTime;
 
-    // // If it's a tap (small movement, short time), don't trigger inertia
-    // if (moveDistX < 10 && moveDistY < 10 && elapsed < 200) {
-    //   this.velocityX = 0;
-    //   this.velocityY = 0;
-    //   return;
-    // }
+    // If it's a tap (small movement, short time), don't trigger inertia
+    if (moveDistX < 10 && moveDistY < 10 && elapsed < 200) {
+      this.stopMovement();
+      this.target.dispatchEvent(
+        new CustomEvent("swipe-stopped", { bubbles: true, composed: true }),
+      );
+      return;
+    }
 
     this.animationId = requestAnimationFrame(this.physicsLoop);
   }
@@ -146,6 +148,12 @@ export class MissingSwipePhysicsEmitter {
     // Stop when both axes have effectively stopped
     if (Math.abs(this.velocityX) > 0.05 || Math.abs(this.velocityY) > 0.05) {
       this.animationId = requestAnimationFrame(this.physicsLoop);
+    } else {
+      this.stopMovement();
+      if (!this.target) return;
+      this.target.dispatchEvent(
+        new CustomEvent("swipe-stopped", { bubbles: true, composed: true }),
+      );
     }
   };
 
