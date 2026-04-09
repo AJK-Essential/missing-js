@@ -153,7 +153,6 @@ feed-card {
 }
 missing-page-virtualizer[fade-in-items] .observed {
   opacity: 0;
-  transition: opacity 0.1s ease;
 }
 missing-page-virtualizer[fade-in-items] .fade-in {
   opacity: 1;
