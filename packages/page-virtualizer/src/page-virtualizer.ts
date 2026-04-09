@@ -99,8 +99,12 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
   private scrollTimeout?: number;
   private scrollWaitTime = 250;
   private swipePhysics?: MissingSwipePhysicsEmitter;
+  private firstSwipe = true;
 
   static override styles = css`
+    * {
+      box-sizing: border-box;
+    }
     :host {
       display: block;
       width: 100%;
@@ -132,7 +136,7 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
         ? html`
             <div
               class="container"
-              style="--translateY:${this.translateY}"
+              style="--translateY:${this.translateY};"
               tabindex="0"
             >
               <slot
@@ -844,25 +848,18 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
       e.preventDefault();
       return;
     }
-    const swipeEvent = e as MissingSwipePhysicsEvent;
-    const scrollDelta = -swipeEvent.detail.deltaY * this.swipeDeltaMultiplier;
-    // this.slowScrollBy(scrollDelta, true);
-    {
-      this.scrolling = true;
-      // requestAnimationFrame(() => {
+
+    if (this.firstSwipe) {
+      this.firstSwipe = false;
       this.updateMemoryWithNewHeights();
       this.setScrollStateFromCurrentView();
-      // this.runAfterAllSubTransitions().then(() => {
-      // this.allStable().then(() => {
-      // this.updateMemoryWithNewHeights();
-      // this.setScrollStateFromCurrentView();
-      this.stableJumpTo(this.globalScrollY + scrollDelta);
-      // });
-      // this.updateMemoryWithNewHeights();
-      // this.setScrollStateFromCurrentView();
-      // });
-      // });
     }
+
+    const swipeEvent = e as MissingSwipePhysicsEvent;
+    const scrollDelta = -swipeEvent.detail.deltaY * this.swipeDeltaMultiplier;
+
+    this.scrolling = true;
+    this.stableJumpTo(this.globalScrollY + scrollDelta);
     this.dispatchEvent(new CustomEvent("scrolling"));
   }
   onHostSwipeStopped() {
@@ -875,21 +872,18 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
       clearTimeout(this.scrollTimeout);
     }
     this.updateMemoryWithNewHeights();
-    this.setScrollStateFromCurrentView();
-    // this.allStable().then(() => {
-    //   if (this.tickFrame) {
-    //     cancelAnimationFrame(this.tickFrame);
-    //   }
-    //   if (this.scrollTimeout) {
-    //     clearTimeout(this.scrollTimeout);
-    //   }
-    this.scrollTimeout = setTimeout(() => {
-      console.log("reached here");
-      this.scrolling = false;
-      this.updateMemoryWithNewHeights();
-      this.setScrollStateFromCurrentView();
-      this.dispatchEvent(new CustomEvent("scroll-stopped"));
-    }, this.scrollWaitTime);
-    // });
+    this.allStable().then(() => {
+      if (this.scrollTimeout) {
+        clearTimeout(this.scrollTimeout);
+      }
+      this.scrollTimeout = setTimeout(() => {
+        console.log("reached here");
+        this.scrolling = false;
+        this.firstSwipe = true;
+        this.updateMemoryWithNewHeights();
+        this.setScrollStateFromCurrentView();
+        this.dispatchEvent(new CustomEvent("scroll-stopped"));
+      }, this.scrollWaitTime);
+    });
   }
 }

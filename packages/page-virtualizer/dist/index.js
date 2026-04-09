@@ -305,7 +305,9 @@ class E {
     this.target.dispatchEvent(r);
   }
   onPointerDown(t) {
-    this.target && t.pointerType !== "mouse" && (this.stopMovement(), this.isDragging = !0, this.startX = t.clientX, this.startY = t.clientY, this.startTime = performance.now(), this.lastX = this.startX, this.lastY = this.startY, this.lastTime = this.startTime, this.target.setPointerCapture(t.pointerId), this.target.removeEventListener("pointermove", this.pointerMoveListener), this.target.removeEventListener("pointerup", this.pointerUpListener), this.target.addEventListener("pointermove", this.pointerMoveListener), this.target.addEventListener("pointerup", this.pointerUpListener));
+    this.target && t.pointerType !== "mouse" && (this.stopMovement(), this.isDragging = !0, this.startX = t.clientX, this.startY = t.clientY, this.startTime = performance.now(), this.lastX = this.startX, this.lastY = this.startY, this.lastTime = this.startTime, this.target.setPointerCapture(t.pointerId), this.target.dispatchEvent(
+      new CustomEvent("swipe-started", { bubbles: !0, composed: !0 })
+    ), this.target.removeEventListener("pointermove", this.pointerMoveListener), this.target.removeEventListener("pointerup", this.pointerUpListener), this.target.addEventListener("pointermove", this.pointerMoveListener), this.target.addEventListener("pointerup", this.pointerUpListener));
   }
   onPointerMove(t) {
     if (!this.isDragging) return;
@@ -337,14 +339,14 @@ let n = class extends u {
   constructor() {
     super(...arguments), this.items = [], this.defaultHeight = 200 * 10, this.numOfItems = 2, this.uniqueSelector = "", this.arrowClickScrollTopDelta = 40, this.needsTransition = !1, this.swipeDeltaMultiplier = 1, this.globalScrollY = 0, this.initialized = !1, this.virtualScrollHeight = this.clientHeight, this.containerHeight = 100, this.translateY = "", this.startIndex = 0, this.hostClientHeight = this.clientHeight, this.containerResizeObserver = new ResizeObserver(
       this.containerResize.bind(this)
-    ), this.hostResizeObserver = new ResizeObserver(this.hostResize.bind(this)), this.hostSwipeListener = this.onHostSwipe.bind(this), this.hostSwipeStoppedListener = this.onHostSwipeStopped.bind(this), this.fakeScrollbarDraggingListener = this.onFakeScrollbarDragging.bind(this), this.fakeScrollbarDragReleaseListener = this.onFakeScrollbarDragRelease.bind(this), this.fakeScrollbarDragStopListener = this.onFakeScrollbarDragStop.bind(this), this.dimensionChangedListener = this.dimensionChangedCB.bind(this), this.pauseUpdate = !1, this.scrolling = !1, this.localScrollY = 0, this.rawHeightUpdates = {}, this.scrollWaitTime = 250;
+    ), this.hostResizeObserver = new ResizeObserver(this.hostResize.bind(this)), this.hostSwipeListener = this.onHostSwipe.bind(this), this.hostSwipeStoppedListener = this.onHostSwipeStopped.bind(this), this.fakeScrollbarDraggingListener = this.onFakeScrollbarDragging.bind(this), this.fakeScrollbarDragReleaseListener = this.onFakeScrollbarDragRelease.bind(this), this.fakeScrollbarDragStopListener = this.onFakeScrollbarDragStop.bind(this), this.dimensionChangedListener = this.dimensionChangedCB.bind(this), this.pauseUpdate = !1, this.scrolling = !1, this.localScrollY = 0, this.rawHeightUpdates = {}, this.scrollWaitTime = 250, this.firstSwipe = !0;
   }
   render() {
     return b`
       ${this.initialized ? b`
             <div
               class="container"
-              style="--translateY:${this.translateY}"
+              style="--translateY:${this.translateY};"
               tabindex="0"
             >
               <slot
@@ -701,16 +703,22 @@ let n = class extends u {
       i.preventDefault();
       return;
     }
+    this.firstSwipe && (this.firstSwipe = !1, this.updateMemoryWithNewHeights(), this.setScrollStateFromCurrentView());
     const e = -i.detail.deltaY * this.swipeDeltaMultiplier;
-    this.scrolling = !0, this.updateMemoryWithNewHeights(), this.setScrollStateFromCurrentView(), this.stableJumpTo(this.globalScrollY + e), this.dispatchEvent(new CustomEvent("scrolling"));
+    this.scrolling = !0, this.stableJumpTo(this.globalScrollY + e), this.dispatchEvent(new CustomEvent("scrolling"));
   }
   onHostSwipeStopped() {
-    this.scrollTop = 0, console.log("swipe-stopped"), this.tickFrame && cancelAnimationFrame(this.tickFrame), this.scrollTimeout && clearTimeout(this.scrollTimeout), this.updateMemoryWithNewHeights(), this.setScrollStateFromCurrentView(), this.scrollTimeout = setTimeout(() => {
-      console.log("reached here"), this.scrolling = !1, this.updateMemoryWithNewHeights(), this.setScrollStateFromCurrentView(), this.dispatchEvent(new CustomEvent("scroll-stopped"));
-    }, this.scrollWaitTime);
+    this.scrollTop = 0, console.log("swipe-stopped"), this.tickFrame && cancelAnimationFrame(this.tickFrame), this.scrollTimeout && clearTimeout(this.scrollTimeout), this.updateMemoryWithNewHeights(), this.allStable().then(() => {
+      this.scrollTimeout && clearTimeout(this.scrollTimeout), this.scrollTimeout = setTimeout(() => {
+        console.log("reached here"), this.scrolling = !1, this.firstSwipe = !0, this.updateMemoryWithNewHeights(), this.setScrollStateFromCurrentView(), this.dispatchEvent(new CustomEvent("scroll-stopped"));
+      }, this.scrollWaitTime);
+    });
   }
 };
 n.styles = v`
+    * {
+      box-sizing: border-box;
+    }
     :host {
       display: block;
       width: 100%;

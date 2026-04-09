@@ -42,6 +42,7 @@ export declare class MissingPageVirtualizer extends virtualiserKeyboardBase {
     private scrollTimeout?;
     private scrollWaitTime;
     private swipePhysics?;
+    private firstSwipe;
     static styles: import('lit').CSSResult;
     render(): import('lit-html').TemplateResult<1>;
     initialize(): void;

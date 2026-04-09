@@ -75,6 +75,7 @@ export class MissingPageVirtualizerDemo implements AfterViewInit {
     const scrollerEvent = e as LoadEvent;
     const { indices } = scrollerEvent.detail;
     const tempArray = [];
+    this.startIndex = indices[0];
     for (let i = indices[0]; i <= indices[1]; ++i) {
       tempArray.push({ pageIndex: i, data: i <= this.items.length - 1 ? this.items[i] : [] });
     }

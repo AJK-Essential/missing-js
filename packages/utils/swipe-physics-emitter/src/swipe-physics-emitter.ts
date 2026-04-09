@@ -82,6 +82,9 @@ export class MissingSwipePhysicsEmitter {
     this.lastY = this.startY;
     this.lastTime = this.startTime;
     this.target.setPointerCapture(e.pointerId);
+    this.target.dispatchEvent(
+      new CustomEvent("swipe-started", { bubbles: true, composed: true }),
+    );
     this.target.removeEventListener("pointermove", this.pointerMoveListener);
     this.target.removeEventListener("pointerup", this.pointerUpListener);
     this.target.addEventListener("pointermove", this.pointerMoveListener);

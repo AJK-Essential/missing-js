@@ -1,5 +1,5 @@
-import { css as p, LitElement as g, html as u } from "lit";
-import { property as o, customElement as b } from "lit/decorators.js";
+import { css as p, LitElement as u, html as b } from "lit";
+import { property as h, queryAssignedElements as f, customElement as g } from "lit/decorators.js";
 /**
  * Missing JS - @missing-js/dimension-reporter
  * @license MIT
@@ -16,18 +16,26 @@ import { property as o, customElement as b } from "lit/decorators.js";
  * Licensed under the MIT License.
  * Free for personal and commercial use.
  */
-var m = Object.defineProperty, f = Object.getOwnPropertyDescriptor, h = (c, e, l, n) => {
-  for (var t = n > 1 ? void 0 : n ? f(e, l) : e, s = c.length - 1, r; s >= 0; s--)
-    (r = c[s]) && (t = (n ? r(e, l, t) : r(t)) || t);
-  return n && t && m(e, l, t), t;
+var m = Object.defineProperty, v = Object.getOwnPropertyDescriptor, r = (e, t, c, l) => {
+  for (var i = l > 1 ? void 0 : l ? v(t, c) : t, o = e.length - 1, n; o >= 0; o--)
+    (n = e[o]) && (i = (l ? n(t, c, i) : n(i)) || i);
+  return l && i && m(t, c, i), i;
 };
-let i = class extends g {
+let s = class extends u {
   constructor() {
-    super(...arguments), this.height = this.clientHeight, this.width = this.clientWidth, this.oldHeight = 0, this.oldWidth = 0, this.isPage = !1, this.resizeObserver = new ResizeObserver((c) => {
-      const e = this.renderRoot.querySelector("slot");
-      if (e == null ? void 0 : e.assignedElements({ flatten: !0 }).length) {
-        const t = c[0].contentRect, s = t.height, r = t.width, d = Math.abs(s - this.height) > 0.5, a = Math.abs(r - this.width) > 0.5;
-        (d || a) && (this.oldHeight = this.height, this.oldWidth = this.width, this.height = s, this.width = r, this.dispatchEvent(
+    super(...arguments), this.height = this.clientHeight, this.width = this.clientWidth, this.oldHeight = 0, this.oldWidth = 0, this.isPage = !1, this.isVirtualizerItem = !1, this.io = new IntersectionObserver(
+      (e) => {
+        for (const t of e)
+          t.intersectionRatio === 0 ? t.target.classList.remove("fade-in") : t.target.classList.add("fade-in");
+      },
+      {
+        threshold: new Array(101).fill(0).map((e, t) => t / 100)
+      }
+    ), this.resizeObserver = new ResizeObserver((e) => {
+      const t = this.renderRoot.querySelector("slot");
+      if (t == null ? void 0 : t.assignedElements({ flatten: !0 }).length) {
+        const i = e[0].borderBoxSize, o = i[0].blockSize, n = i[0].inlineSize, a = Math.abs(o - this.height) > 0, d = Math.abs(n - this.width) > 0;
+        (a || d) && (this.oldHeight = this.height, this.oldWidth = this.width, this.height = o, this.width = n, this.dispatchEvent(
           new CustomEvent("dimension-changed", {
             detail: { target: this },
             bubbles: !0,
@@ -38,41 +46,62 @@ let i = class extends g {
     });
   }
   render() {
-    return u` <slot></slot> `;
+    return b`
+      <slot
+        @slotchange="${() => {
+      this.io.disconnect(), this.isPage && this._listItems && this._listItems.length && this._listItems.forEach((e) => {
+        e.classList.add("observed"), this.io.observe(e);
+      });
+    }}"
+      ></slot>
+    `;
   }
   connectedCallback() {
     super.connectedCallback(), this.resizeObserver.observe(this);
   }
   disconnectedCallback() {
-    this.resizeObserver.disconnect(), super.disconnectedCallback();
+    this.resizeObserver.disconnect(), this.io && this.io.disconnect(), super.disconnectedCallback();
+  }
+  refreshIO() {
+    this.isPage && (this.io && this.io.disconnect(), this.io.observe(this));
   }
 };
-i.styles = p`
+s.styles = p`
+    * {
+      box-sizing: border-box;
+    }
     :host {
       display: block;
       width: var(--width, fit-content);
       height: var(--height, fit-content);
+      position: relative;
     }
   `;
-h([
-  o({ type: Number, reflect: !0 })
-], i.prototype, "height", 2);
-h([
-  o({ type: Number, reflect: !0 })
-], i.prototype, "width", 2);
-h([
-  o({ type: Number, reflect: !0, attribute: "old-height" })
-], i.prototype, "oldHeight", 2);
-h([
-  o({ type: Number, reflect: !0, attribute: "old-width" })
-], i.prototype, "oldWidth", 2);
-h([
-  o({ type: Boolean, reflect: !0, attribute: "is-page" })
-], i.prototype, "isPage", 2);
-i = h([
-  b("missing-dimension-reporter")
-], i);
+r([
+  h({ type: Number, reflect: !0 })
+], s.prototype, "height", 2);
+r([
+  h({ type: Number, reflect: !0 })
+], s.prototype, "width", 2);
+r([
+  h({ type: Number, reflect: !0, attribute: "old-height" })
+], s.prototype, "oldHeight", 2);
+r([
+  h({ type: Number, reflect: !0, attribute: "old-width" })
+], s.prototype, "oldWidth", 2);
+r([
+  h({ type: Boolean, reflect: !0, attribute: "is-page" })
+], s.prototype, "isPage", 2);
+r([
+  h({ type: Boolean, reflect: !0, attribute: "is-virtualizer-item" })
+], s.prototype, "isVirtualizerItem", 2);
+r([
+  f({ flatten: !0 })
+], s.prototype, "_listItems", 2);
+s = r([
+  g("missing-dimension-reporter")
+], s);
 export {
-  i as MissingDimensionReporter
+  s as MissingDimensionReporter
 };
 //# sourceMappingURL=index.js.map
