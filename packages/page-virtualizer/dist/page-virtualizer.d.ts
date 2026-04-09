@@ -21,11 +21,11 @@ export declare class MissingPageVirtualizer extends virtualiserKeyboardBase {
     private containerHeight;
     private translateY;
     private startIndex;
+    private fadeInItems;
     private hostClientHeight;
     private containerResizeObserver;
     private hostResizeObserver;
     private hostSwipeListener;
-    private hostSwipeStoppedListener;
     private fakeScrollbarDraggingListener;
     private fakeScrollbarDragReleaseListener;
     private fakeScrollbarDragStopListener;
@@ -42,7 +42,6 @@ export declare class MissingPageVirtualizer extends virtualiserKeyboardBase {
     private scrollTimeout?;
     private scrollWaitTime;
     private swipePhysics?;
-    private firstSwipe;
     static styles: import('lit').CSSResult;
     render(): import('lit-html').TemplateResult<1>;
     initialize(): void;
@@ -88,6 +87,20 @@ export declare class MissingPageVirtualizer extends virtualiserKeyboardBase {
     runAfterAllTransitions(transitioners: HTMLElement[]): Promise<void>;
     jumpRelease(): void;
     onHostSwipe(e: Event): void;
-    onHostSwipeStopped(): void;
+    /**
+     * This function is for highly accurate jumps to a particular
+     * location. Accuracy means, this function will take into account the
+     * updated heights after render and then correctly move to the required
+     * scrollTop. Little computationally expensive as Lit has to
+     * render twice, but if it is needed say to jump across
+     * a 1000 pages on a high frequency like a page up or page down, this
+     * function will come in handy.
+     *
+     * Make sure ` this.updateMemoryWithNewHeights();
+     * this.setScrollStateFromCurrentView();` are called before
+     * calling this function
+     * @param scrollTop
+     */
+    accurateJumpTo(scrollTop: number): void;
 }
 //# sourceMappingURL=page-virtualizer.d.ts.map

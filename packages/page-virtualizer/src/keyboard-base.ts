@@ -331,7 +331,6 @@ export class virtualiserKeyboardBase extends LitElement {
     this.tabPressed = false;
     this.shiftPressed = false;
     this.onKeyUp(e.key.toLowerCase());
-    // this.blur();
   }
   documentKeyboardDownCB(e: KeyboardEvent) {
     this.tabPressed = e.key.toLowerCase() === "tab";

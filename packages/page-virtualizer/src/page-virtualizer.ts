@@ -22,7 +22,7 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
   public items: unknown[] = [];
 
   @property({ type: String, reflect: true })
-  public defaultHeight = 200 * 10;
+  public defaultHeight = 200;
 
   @property({ type: Number, reflect: true, attribute: "num-of-items" })
   public numOfItems = 2;
@@ -71,6 +71,9 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
   @property({ type: Number, reflect: true })
   private startIndex = 0;
 
+  @property({ type: Boolean, reflect: true, attribute: "fade-in-items" })
+  private fadeInItems = false;
+
   @property({ type: Number, reflect: true })
   private hostClientHeight = this.clientHeight;
 
@@ -79,7 +82,6 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
   );
   private hostResizeObserver = new ResizeObserver(this.hostResize.bind(this));
   private hostSwipeListener = this.onHostSwipe.bind(this);
-  private hostSwipeStoppedListener = this.onHostSwipeStopped.bind(this);
   private fakeScrollbarDraggingListener =
     this.onFakeScrollbarDragging.bind(this);
   private fakeScrollbarDragReleaseListener =
@@ -99,7 +101,6 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
   private scrollTimeout?: number;
   private scrollWaitTime = 250;
   private swipePhysics?: MissingSwipePhysicsEmitter;
-  private firstSwipe = true;
 
   static override styles = css`
     * {
@@ -167,6 +168,7 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
                     }
                     this.scrollTimeout = setTimeout(() => {
                       this.scrolling = false;
+                      this.fadeInItems = false;
                     }, this.scrollWaitTime);
                   }
                 }}"
@@ -211,7 +213,6 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
       this.containerResizeObserver.observe(this.container as HTMLElement);
       this.hostResizeObserver.observe(this);
       this.addEventListener("swipe-detected", this.hostSwipeListener);
-      this.addEventListener("swipe-stopped", this.hostSwipeStoppedListener);
       this.dispatchEvent(
         new CustomEvent("load", {
           detail: {
@@ -255,7 +256,6 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
       this.dimensionChangedListener,
     );
     this.removeEventListener("swipe-detected", this.hostSwipeListener);
-    this.removeEventListener("swipe-stopped", this.hostSwipeStoppedListener);
     if (this.fakeScrollbar) {
       this.fakeScrollbar.removeEventListener(
         "dragging",
@@ -283,6 +283,7 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
     if (this.scrollTimeout) {
       clearTimeout(this.scrollTimeout);
     }
+    this.fadeInItems = false;
     this.classList.add("by-pass");
     this.jumpToScrollTop(fakeScrollbar.computedTargetScrollTop);
     this.dispatchEvent(new CustomEvent("scrolling"));
@@ -333,6 +334,7 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
       flatten: true,
     }).length;
     if (assignedElementCount !== this.numOfItems) return;
+    if (this.pauseUpdate) return;
     this.containerHeight = parseFloat(this.containerComputedStyle.height);
   }
 
@@ -362,6 +364,7 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
     if (this.scrollTimeout) {
       clearTimeout(this.scrollTimeout);
     }
+    this.fadeInItems = true;
     this.updateMemoryWithNewHeights();
     this.updateContainerHeight();
     this.localScrollY = this.getComputedLocalScrollY();
@@ -484,6 +487,7 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
           }
           this.scrollTimeout = setTimeout(() => {
             this.scrolling = false;
+            this.fadeInItems = false;
             this.dispatchEvent(new CustomEvent("scroll-stopped"));
           }, this.scrollWaitTime);
         }
@@ -714,29 +718,22 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
       case "arrowup":
       case "arrowdown":
         {
+          this.fadeInItems = true;
           this.scrolling = true;
           this.repeatedScrollByPixels(increment);
         }
         break;
       case "pagedown":
-      case "pageup":
-        {
-          this.scrolling = true;
-          requestAnimationFrame(() => {
-            this.updateMemoryWithNewHeights();
-            this.setScrollStateFromCurrentView();
-            // this.runAfterAllSubTransitions().then(() => {
-            // this.allStable().then(() => {
-            // this.updateMemoryWithNewHeights();
-            // this.setScrollStateFromCurrentView();
-            this.stableJumpTo(this.globalScrollY + increment);
-            // });
-            // this.updateMemoryWithNewHeights();
-            // this.setScrollStateFromCurrentView();
-            // });
-          });
-        }
-        this.dispatchEvent(new CustomEvent("scrolling"));
+      case "pageup": {
+        this.fadeInItems = false;
+        this.scrolling = true;
+        requestAnimationFrame(() => {
+          if (this.pauseUpdate) return;
+          this.updateMemoryWithNewHeights();
+          this.setScrollStateFromCurrentView();
+          this.accurateJumpTo(this.globalScrollY + increment);
+        });
+      }
     }
   }
   protected override onKeyUp(key: typeof KeyboardEvent.prototype.key): void {
@@ -749,20 +746,25 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
     const lowerCaseKey = key.toLowerCase();
     if (lowerCaseKey === "pageup" || lowerCaseKey === "pagedown") {
       this.allStable().then(() => {
+        if (this.pauseUpdate) return;
         if (this.tickFrame) {
           cancelAnimationFrame(this.tickFrame);
         }
-        if (this.scrollTimeout) {
-          clearTimeout(this.scrollTimeout);
-        }
-        this.scrollTimeout = setTimeout(() => {
-          this.scrolling = false;
-          this.updateMemoryWithNewHeights();
-          this.setScrollStateFromCurrentView();
-        }, this.scrollWaitTime);
       });
     }
-    this.dispatchEvent(new CustomEvent("scroll-stopped"));
+    if (lowerCaseKey === "escape") {
+      this.focus();
+      this.blur();
+    }
+    if (this.scrollTimeout) {
+      clearTimeout(this.scrollTimeout);
+    }
+    this.scrollTimeout = setTimeout(() => {
+      this.scrolling = false;
+      this.updateMemoryWithNewHeights();
+      this.setScrollStateFromCurrentView();
+      this.dispatchEvent(new CustomEvent("scroll-stopped"));
+    }, this.scrollWaitTime);
   }
   protected stableJumpTo(scrollTop: number) {
     if (this.tickFrame) {
@@ -848,42 +850,67 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
       e.preventDefault();
       return;
     }
-
-    if (this.firstSwipe) {
-      this.firstSwipe = false;
-      this.updateMemoryWithNewHeights();
-      this.setScrollStateFromCurrentView();
-    }
+    this.scrolling = true;
 
     const swipeEvent = e as MissingSwipePhysicsEvent;
     const scrollDelta = -swipeEvent.detail.deltaY * this.swipeDeltaMultiplier;
-
-    this.scrolling = true;
-    this.stableJumpTo(this.globalScrollY + scrollDelta);
+    this.slowScrollBy(scrollDelta, true);
     this.dispatchEvent(new CustomEvent("scrolling"));
   }
-  onHostSwipeStopped() {
-    this.scrollTop = 0;
-    console.log("swipe-stopped");
-    if (this.tickFrame) {
-      cancelAnimationFrame(this.tickFrame);
-    }
-    if (this.scrollTimeout) {
-      clearTimeout(this.scrollTimeout);
-    }
-    this.updateMemoryWithNewHeights();
-    this.allStable().then(() => {
-      if (this.scrollTimeout) {
-        clearTimeout(this.scrollTimeout);
+  /**
+   * This function is for highly accurate jumps to a particular
+   * location. Accuracy means, this function will take into account the
+   * updated heights after render and then correctly move to the required
+   * scrollTop. Little computationally expensive as Lit has to
+   * render twice, but if it is needed say to jump across
+   * a 1000 pages on a high frequency like a page up or page down, this
+   * function will come in handy.
+   *
+   * Make sure ` this.updateMemoryWithNewHeights();
+   * this.setScrollStateFromCurrentView();` are called before
+   * calling this function
+   * @param scrollTop
+   */
+  public accurateJumpTo(scrollTop: number) {
+    requestAnimationFrame(() => {
+      this.fadeInItems = false;
+      this.scrolling = true;
+      if (this.pauseUpdate) return;
+      const currentGlobalScrollY = this.globalScrollY;
+      const increment = scrollTop - currentGlobalScrollY;
+      const localScrollY = this.getComputedLocalScrollY();
+      if (
+        localScrollY + increment < 0 ||
+        localScrollY + increment > this.containerHeight - this.clientHeight
+      ) {
+        this.pauseUpdate = true;
+        const previousStartIndex = this.startIndex;
+        this.container.style.opacity = "0";
+        this.stableJumpTo(this.globalScrollY + increment);
+        this.updateComplete.then(() => {
+          this.allStable().then(() => {
+            this.updateMemoryWithNewHeights();
+            const finalRenderPreviousStartIndexCumulativePreviousIndexHeight =
+              previousStartIndex !== 0
+                ? this.ft!.getCumulativeHeight(previousStartIndex - 1)
+                : 0;
+            const finalGlobalScrollYAfterRender =
+              finalRenderPreviousStartIndexCumulativePreviousIndexHeight +
+              localScrollY +
+              increment;
+            this.stableJumpTo(finalGlobalScrollYAfterRender);
+            this.updateComplete.then(() => {
+              this.allStable().then(() => {
+                this.container.style.opacity = "1";
+                this.dispatchEvent(new CustomEvent("scrolling"));
+              });
+            });
+          });
+        });
+        return;
       }
-      this.scrollTimeout = setTimeout(() => {
-        console.log("reached here");
-        this.scrolling = false;
-        this.firstSwipe = true;
-        this.updateMemoryWithNewHeights();
-        this.setScrollStateFromCurrentView();
-        this.dispatchEvent(new CustomEvent("scroll-stopped"));
-      }, this.scrollWaitTime);
+      this.stableJumpTo(this.globalScrollY + increment);
+      this.dispatchEvent(new CustomEvent("scrolling"));
     });
   }
 }

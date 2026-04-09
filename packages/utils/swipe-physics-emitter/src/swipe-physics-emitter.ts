@@ -82,9 +82,6 @@ export class MissingSwipePhysicsEmitter {
     this.lastY = this.startY;
     this.lastTime = this.startTime;
     this.target.setPointerCapture(e.pointerId);
-    this.target.dispatchEvent(
-      new CustomEvent("swipe-started", { bubbles: true, composed: true }),
-    );
     this.target.removeEventListener("pointermove", this.pointerMoveListener);
     this.target.removeEventListener("pointerup", this.pointerUpListener);
     this.target.addEventListener("pointermove", this.pointerMoveListener);
@@ -125,13 +122,10 @@ export class MissingSwipePhysicsEmitter {
     const elapsed = performance.now() - this.startTime;
 
     // If it's a tap (small movement, short time), don't trigger inertia
-    if (moveDistX < 10 && moveDistY < 10 && elapsed < 200) {
-      this.stopMovement();
-      this.target.dispatchEvent(
-        new CustomEvent("swipe-stopped", { bubbles: true, composed: true }),
-      );
-      return;
-    }
+    // if (moveDistX < 10 && moveDistY < 10 && elapsed < 200) {
+    //   this.stopMovement();
+    //   return;
+    // }
 
     this.animationId = requestAnimationFrame(this.physicsLoop);
   }
@@ -151,12 +145,6 @@ export class MissingSwipePhysicsEmitter {
     // Stop when both axes have effectively stopped
     if (Math.abs(this.velocityX) > 0.05 || Math.abs(this.velocityY) > 0.05) {
       this.animationId = requestAnimationFrame(this.physicsLoop);
-    } else {
-      this.stopMovement();
-      if (!this.target) return;
-      this.target.dispatchEvent(
-        new CustomEvent("swipe-stopped", { bubbles: true, composed: true }),
-      );
     }
   };
 

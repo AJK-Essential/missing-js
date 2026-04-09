@@ -151,16 +151,10 @@ feed-card {
     height: fit-content;
   }
 }
-.observed,
-.observed {
-  filter: blur(1px);
-  z-index: -1;
+missing-page-virtualizer[fade-in-items] .observed {
   opacity: 0;
-  transition: opacity 1s ease 0.1s;
+  transition: opacity 0.1s ease;
 }
-.fade-in,
-.fade-in {
-  filter: blur(0px);
-  z-index: auto;
+missing-page-virtualizer[fade-in-items] .fade-in {
   opacity: 1;
 }
