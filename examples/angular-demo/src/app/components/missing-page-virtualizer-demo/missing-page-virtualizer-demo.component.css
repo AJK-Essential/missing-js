@@ -150,10 +150,28 @@ feed-card {
     width: 100%;
     height: fit-content;
   }
+  .instruction-panel {
+    height: 150px;
+  }
 }
 missing-page-virtualizer[fade-in-items] .observed {
   opacity: 0;
 }
 missing-page-virtualizer[fade-in-items] .fade-in {
   opacity: 1;
+}
+.instruction-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border: 1px solid rgb(255 0 0 / 19%);
+  padding: 1rem;
+  width: 100%;
+  border-radius: 4px;
+  background: rgb(255 0 0 / 2%);
+}
+.info-area {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }

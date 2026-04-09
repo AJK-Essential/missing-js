@@ -76,39 +76,40 @@
     (dimension-changed)="storePanelHeight($event)"
   >
     <div class="panel info-area">
-      @if (renderingArray?.length) {
-        <p>{{ isScrolling ? 'Scrolling' : 'Not Scrolling' }}</p>
-        <p>Showing Items {{ startItem }} - {{ endItem }}</p>
-        <hr style="width: 100%" />
-        <label for="rng" style="font-size: small"
-          >Adjust Swipe Distance Multiplier (doesn't work on desktop)</label
-        >
-        <input
-          type="number"
-          value="1"
-          id="rng"
-          style="
-            /* width: 4ch; */
-            padding: 4px;
-            flex: none;
-            background-color: transparent;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: inherit;
-            font-family: inherit;
-            text-align: center;
-            max-width: 100px;
-          "
-          (input)="adjustScrollerSwipeDelta($event)"
-        />
+      <div class="instruction-panel" style="overflow: auto">
+        <div>
+          This is a demo of a paged-virtualizer component that can technically remember the heights
+          of 10^6 pages. If u inspect the DOM, only a few DOM elements are there that simulate the
+          whole feed. This component is frontend-framework agnostic as it is a web-component and the
+          DOM that u see (the cards are fully provided by the consuming framework) and so, the
+          consuming framework has full access to the DOM.
+        </div>
+        <div>
+          The cards with the content have been generated automatically using a script by combining
+          several phrases together to simulate somewhat realistic social-media posts.
+        </div>
+        <div>
+          Right now we are only showing 100,000 pages, each with 10 items, and thereby virtualizing
+          10 ^ 5 * 10 = 10 ^ 6 DOM Nodes. Scroll all the way below to see the load more button to
+          load more till u reach the 1000000 (1M) post.
+        </div>
         <p style="font-size: smaller">
-          Tab through the cards and PageUp or PageDown as well if you have access to a keyboard
+          Tab through the cards, Arrow Up or Arrow Down and PageUp or PageDown as well if you have
+          access to a keyboard
         </p>
         <p style="font-size: smaller">
           Try dragging the scrollbar as well even if its a touch device
         </p>
-      } @else {
-        <div class="blink">Please wait !!</div>
-      }
+      </div>
+      <div class="instruction-panel" style="height: fit-content">
+        <p>{{ isScrolling ? 'Scrolling' : 'Not Scrolling' }}</p>
+        <p>Showing Items {{ startItem }} - {{ endItem }}</p>
+
+        @if (renderingArray?.length) {
+        } @else {
+          <div class="blink">Please wait !!</div>
+        }
+      </div>
     </div>
   </missing-dimension-reporter>
   <missing-fake-scrollbar #fakeScrollbar></missing-fake-scrollbar>
