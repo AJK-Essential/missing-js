@@ -1,5 +1,5 @@
 import { LitElement as S, css as v, html as b } from "lit";
-import { property as n, state as f, customElement as y } from "lit/decorators.js";
+import { property as h, state as f, queryAssignedElements as y, customElement as T } from "lit/decorators.js";
 /**
  * Missing JS - @missing-js/page-virtualizer (Pro)
  * @license PolyForm Noncommercial 1.0.0
@@ -10,7 +10,7 @@ import { property as n, state as f, customElement as y } from "lit/decorators.js
  * Sunset Clause: Automatically transitions to MIT after Jan 1, 2029.
  * Licensing: Purchase link will be updated soon
  */
-class T {
+class C {
   constructor(t) {
     this.size = t, this.tree = new Float64Array(t + 1);
   }
@@ -67,13 +67,13 @@ var k = Object.defineProperty, m = (i, t, e, s) => {
     (l = i[o]) && (r = l(t, e, r) || r);
   return r && k(t, e, r), r;
 };
-class u extends S {
+class g extends S {
   constructor() {
     super(...arguments), this.defaultTabbing = !1, this.defaultArrowUpNavigation = !1, this.defaultArrowDownNavigation = !1, this.defaultPageUpNavigation = !1, this.defaultPageDownNavigation = !1, this.keyboardIncrements = {
       arrowdown: 5,
       arrowup: -5,
-      pagedown: 2e3,
-      pageup: -2e3
+      pagedown: 100,
+      pageup: -100
     }, this.shiftPressed = !1, this.tabPressed = !1, this.keyboardDownEventListener = this.keyboardDownEventCB.bind(this), this.keyboardUpEventListener = this.keyboardUpEventCB.bind(this), this.documentKeyboardDownListener = this.documentKeyboardDownCB.bind(this), this.scrollAmt = 0, this.direction = "STABLE", this.tick = () => {
       this.tickFrame && cancelAnimationFrame(this.tickFrame), this.scrollAmt && (this.scrollByAmt(this.scrollAmt, !0), this.tickFrame = requestAnimationFrame(this.tick.bind(this)));
     }, this.repeatedScrollByPixels = (t) => {
@@ -95,17 +95,17 @@ class u extends S {
         );
         if (l.includes(o)) {
           this.scrollTop = 0;
-          let h;
+          let a;
           if (this.tabPressed && !this.shiftPressed) {
             if (t.preventDefault(), await this.runAfterTransitions(o), l.indexOf(o) !== l.length - 1) {
               if (o.getBoundingClientRect().top < s) {
-                const p = l.find(
-                  (g) => g.getBoundingClientRect().top >= s
+                const u = l.find(
+                  (p) => p.getBoundingClientRect().top >= s
                 );
-                p && p.focus();
+                u && u.focus();
                 return;
               }
-              h = this.getNextScrollDelta(
+              a = this.getNextScrollDelta(
                 o,
                 "forwards",
                 s,
@@ -113,19 +113,19 @@ class u extends S {
               );
             } else {
               let d = o.getBoundingClientRect();
-              h = d.top - this.clientHeight / 2 + d.height / 2;
+              a = d.top - this.clientHeight / 2 + d.height / 2;
             }
-            this.tabPressed = !1, this.shiftPressed = !1, this.scrollByAmt(h), this.scrollCheck();
+            this.tabPressed = !1, this.shiftPressed = !1, this.scrollByAmt(a), this.scrollCheck();
           } else if (this.tabPressed && this.shiftPressed) {
             if (t.preventDefault(), await this.runAfterTransitions(o), l.indexOf(o) !== 0) {
               if (o.getBoundingClientRect().bottom >= r) {
-                const p = l.findLast(
-                  (g) => g.getBoundingClientRect().bottom <= r
+                const u = l.findLast(
+                  (p) => p.getBoundingClientRect().bottom <= r
                 );
-                p && p.focus();
+                u && u.focus();
                 return;
               }
-              h = this.getNextScrollDelta(
+              a = this.getNextScrollDelta(
                 o,
                 "backwards",
                 s,
@@ -133,9 +133,9 @@ class u extends S {
               );
             } else {
               let d = o.getBoundingClientRect();
-              h = d.top - this.clientHeight / 2 + d.height / 2;
+              a = d.top - this.clientHeight / 2 + d.height / 2;
             }
-            this.tabPressed = !1, this.shiftPressed = !1, this.scrollByAmt(h), this.scrollCheck();
+            this.tabPressed = !1, this.shiftPressed = !1, this.scrollByAmt(a), this.scrollCheck();
           }
         }
       }
@@ -144,11 +144,11 @@ class u extends S {
   getNextScrollDelta(t, e, s, r) {
     let o = 0, l = t.getBoundingClientRect();
     if (e === "forwards") {
-      const h = l.top < r && l.bottom <= r ? "completely-within" : l.top <= r && l.bottom > r ? "partially-within" : "out";
-      h === "completely-within" ? o = 0 : (h === "partially-within" || h === "out") && (l.height >= this.clientHeight ? o = l.top - s : o = h === "out" ? l.top - this.clientHeight / 2 + l.height / 2 : l.bottom - r);
+      const a = l.top < r && l.bottom <= r ? "completely-within" : l.top <= r && l.bottom > r ? "partially-within" : "out";
+      a === "completely-within" ? o = 0 : (a === "partially-within" || a === "out") && (l.height >= this.clientHeight ? o = l.top - s : o = a === "out" ? l.top - this.clientHeight / 2 + l.height / 2 : l.bottom - r);
     } else {
-      const h = l.bottom > s && l.top >= s ? "completely-within" : l.bottom >= s && l.top < s ? "partially-within" : "out";
-      h === "completely-within" ? o = 0 : (h === "partially-within" || h === "out") && (l.height >= this.clientHeight ? o = l.bottom - r : o = h === "out" ? l.top - this.clientHeight / 2 + l.height / 2 : l.top - s);
+      const a = l.bottom > s && l.top >= s ? "completely-within" : l.bottom >= s && l.top < s ? "partially-within" : "out";
+      a === "completely-within" ? o = 0 : (a === "partially-within" || a === "out") && (l.height >= this.clientHeight ? o = l.bottom - r : o = a === "out" ? l.top - this.clientHeight / 2 + l.height / 2 : l.top - s);
     }
     return o;
   }
@@ -201,53 +201,53 @@ class u extends S {
   }
 }
 m([
-  n({
+  h({
     type: String,
     reflect: !0,
     attribute: "tabbing-element-selector"
   })
-], u.prototype, "tabbingElementSelector");
+], g.prototype, "tabbingElementSelector");
 m([
-  n({ type: Boolean, reflect: !0, attribute: "default-tabbing" })
-], u.prototype, "defaultTabbing");
+  h({ type: Boolean, reflect: !0, attribute: "default-tabbing" })
+], g.prototype, "defaultTabbing");
 m([
-  n({
+  h({
     type: Boolean,
     reflect: !0,
     attribute: "default-arrow-up-navigation"
   })
-], u.prototype, "defaultArrowUpNavigation");
+], g.prototype, "defaultArrowUpNavigation");
 m([
-  n({
+  h({
     type: Boolean,
     reflect: !0,
     attribute: "default-arrow-down-navigation"
   })
-], u.prototype, "defaultArrowDownNavigation");
+], g.prototype, "defaultArrowDownNavigation");
 m([
-  n({
+  h({
     type: Boolean,
     reflect: !0,
     attribute: "default-page-up-navigation"
   })
-], u.prototype, "defaultPageUpNavigation");
+], g.prototype, "defaultPageUpNavigation");
 m([
-  n({
+  h({
     type: Boolean,
     reflect: !0,
     attribute: "default-page-down-navigation"
   })
-], u.prototype, "defaultPageDownNavigation");
+], g.prototype, "defaultPageDownNavigation");
 m([
-  n({ type: Object })
-], u.prototype, "keyboardIncrements");
+  h({ type: Object })
+], g.prototype, "keyboardIncrements");
 m([
-  n({
+  h({
     type: Number,
     reflect: !0,
     attribute: "tabbing-item-transition-time"
   })
-], u.prototype, "tabbingItemTransitionTime");
+], g.prototype, "tabbingItemTransitionTime");
 /**
  * Missing JS - @missing-js/swipe-physics-emitter
  * @license MIT
@@ -256,15 +256,7 @@ m([
  * Licensed under the MIT License.
  * Free for personal and commercial use.
  */
-/**
- * Missing JS - @missing-js/swipe-physics-emitter
- * @license MIT
- * Copyright (c) 2026 Missing JS / AJK-Essential.
- * ---------------------------------------------------------
- * Licensed under the MIT License.
- * Free for personal and commercial use.
- */
-class C {
+class Y {
   constructor() {
     this.friction = 0.95, this.velocityX = 0, this.velocityY = 0, this.isDragging = !1, this.lastX = 0, this.lastY = 0, this.lastTime = 0, this.startX = 0, this.startY = 0, this.startTime = 0, this.animationId = null, this.pointerMoveListener = this.onPointerMove.bind(this), this.pointerDownListener = this.onPointerDown.bind(this), this.pointerUpListener = this.onPointerUp.bind(this), this.physicsLoop = () => {
       if (this.isDragging) return;
@@ -312,16 +304,16 @@ class C {
     this.target && (this.target.removeEventListener("pointerdown", this.pointerDownListener), this.target.removeEventListener("pointermove", this.pointerMoveListener), this.target.removeEventListener("pointerup", this.pointerUpListener), this.target = null), this.stopMovement();
   }
 }
-var H = Object.defineProperty, Y = Object.getOwnPropertyDescriptor, c = (i, t, e, s) => {
-  for (var r = s > 1 ? void 0 : s ? Y(t, e) : t, o = i.length - 1, l; o >= 0; o--)
+var I = Object.defineProperty, x = Object.getOwnPropertyDescriptor, c = (i, t, e, s) => {
+  for (var r = s > 1 ? void 0 : s ? x(t, e) : t, o = i.length - 1, l; o >= 0; o--)
     (l = i[o]) && (r = (s ? l(t, e, r) : l(r)) || r);
-  return s && r && H(t, e, r), r;
+  return s && r && I(t, e, r), r;
 };
-let a = class extends u {
+let n = class extends g {
   constructor() {
     super(...arguments), this.items = [], this.defaultHeight = 200, this.numOfItems = 2, this.uniqueSelector = "", this.arrowClickScrollTopDelta = 40, this.needsTransition = !1, this.swipeDeltaMultiplier = 1, this.globalScrollY = 0, this.initialized = !1, this.virtualScrollHeight = this.clientHeight, this.containerHeight = 100, this.translateY = "", this.startIndex = 0, this.fadeInItems = !1, this.hostClientHeight = this.clientHeight, this.containerResizeObserver = new ResizeObserver(
       this.containerResize.bind(this)
-    ), this.hostResizeObserver = new ResizeObserver(this.hostResize.bind(this)), this.hostSwipeListener = this.onHostSwipe.bind(this), this.fakeScrollbarDraggingListener = this.onFakeScrollbarDragging.bind(this), this.fakeScrollbarDragReleaseListener = this.onFakeScrollbarDragRelease.bind(this), this.fakeScrollbarDragStopListener = this.onFakeScrollbarDragStop.bind(this), this.dimensionChangedListener = this.dimensionChangedCB.bind(this), this.pauseUpdate = !1, this.scrolling = !1, this.localScrollY = 0, this.rawHeightUpdates = {}, this.scrollWaitTime = 250;
+    ), this.hostResizeObserver = new ResizeObserver(this.hostResize.bind(this)), this.hostSwipeListener = this.onHostSwipe.bind(this), this.fakeScrollbarDraggingListener = this.onFakeScrollbarDragging.bind(this), this.fakeScrollbarDragReleaseListener = this.onFakeScrollbarDragRelease.bind(this), this.fakeScrollbarDragStopListener = this.onFakeScrollbarDragStop.bind(this), this.dimensionChangedListener = this.dimensionChangedCB.bind(this), this.pauseUpdate = !1, this.scrolling = !1, this.localScrollY = 0, this.rawHeightUpdates = {}, this.scrollWaitTime = 250, this.jumpSkipping = !1;
   }
   render() {
     return b`
@@ -334,12 +326,12 @@ let a = class extends u {
               <slot
                 @slotchange="${async (i) => {
       var t;
-      if (this.pauseUpdate) {
+      if (this.slotChangedResolve && (this.slotChangedResolve(), this.slotChangedResolve = void 0), console.log("slot change called"), this.pauseUpdate) {
         this.classList.add("by-pass");
         const e = this.innerSlot.assignedElements({
           flatten: !0
         });
-        await this.tillPainted(), await this.tillStable([this.container, ...e]), this.localScrollY = this.getComputedLocalScrollY(), this.updateMemoryWithNewHeights(), this.globalScrollY = (this.startIndex > 0 ? this.ft.getCumulativeHeight(this.startIndex - 1) : 0) + this.localScrollY, (t = this.fakeScrollbar) == null || t.setToScrollTop(this.globalScrollY), this.pauseUpdate = !1, this.dispatchEvent(new CustomEvent("scroll-stopped")), this.scrollTimeout && clearTimeout(this.scrollTimeout), this.scrollTimeout = setTimeout(() => {
+        await this.tillPainted(), await this.tillStable([this.container, ...e]), this.localScrollY = this.getComputedLocalScrollY(), this.updateMemoryWithNewHeights(), this.globalScrollY = (this.startIndex > 0 ? this.ft.getCumulativeHeight(this.startIndex - 1) : 0) + this.localScrollY, (t = this.fakeScrollbar) == null || t.setToScrollTop(this.globalScrollY), this.pauseUpdate = !1, this.style.opacity = "1", this.dispatchEvent(new CustomEvent("scroll-stopped")), this.scrollTimeout && clearTimeout(this.scrollTimeout), this.scrollTimeout = setTimeout(() => {
           this.scrolling = !1, this.fadeInItems = !1;
         }, this.scrollWaitTime);
       }
@@ -351,7 +343,7 @@ let a = class extends u {
   }
   initialize() {
     this.initialized = !0, this.addEventListener("dimension-changed", this.dimensionChangedListener), this.needsTransition && this.classList.add("smooth"), this.updateComplete.then(() => {
-      this.ft = new T(this.items.length), this.rawHeights = new Float64Array(this.items.length).fill(
+      this.ft = new C(this.items.length), this.rawHeights = new Float64Array(this.items.length).fill(
         this.defaultHeight
       ), this.ft.initAll(this.rawHeights), this.fakeScrollbar && (this.fakeScrollbar.addEventListener(
         "dragging",
@@ -379,7 +371,7 @@ let a = class extends u {
   }
   updated(i) {
     var t;
-    super.updated(i), this.fakeScrollbar && (i.has("hostClientHeight") || i.has("virtualScrollHeight")) && (this.fakeScrollbar.targetClientHeight = this.hostClientHeight, this.fakeScrollbar.targetScrollHeight = this.virtualScrollHeight), i.has("swipeScroll") && (this.swipeScroll ? (this.swipePhysics = new C(), this.swipePhysics.emitFor(this)) : (t = this.swipePhysics) == null || t.destroy());
+    super.updated(i), this.fakeScrollbar && (i.has("hostClientHeight") || i.has("virtualScrollHeight")) && (this.fakeScrollbar.targetClientHeight = this.hostClientHeight, this.fakeScrollbar.targetScrollHeight = this.virtualScrollHeight), i.has("swipeScroll") && (this.swipeScroll ? (this.swipePhysics = new Y(), this.swipePhysics.emitFor(this)) : (t = this.swipePhysics) == null || t.destroy());
   }
   disconnectedCallback() {
     this.removeEventListener(
@@ -449,8 +441,8 @@ let a = class extends u {
         this.classList.add("by-pass"), this.pauseUpdate = !0;
         const s = this.querySelector(
           this.uniqueSelector
-        ).getBoundingClientRect().height, r = this.containerHeight - s, l = this.localScrollY + i - s - r, h = this.startIndex + 1, d = r + l;
-        this.translateY = `${-d}px`, this.startIndex = h, this.dispatchEvent(
+        ).getBoundingClientRect().height, r = this.containerHeight - s, l = this.localScrollY + i - s - r, a = this.startIndex + 1, d = r + l;
+        this.translateY = `${-d}px`, this.startIndex = a, this.style.opacity = "0", this.dispatchEvent(
           new CustomEvent("load", {
             detail: {
               indices: [this.startIndex, this.startIndex + this.numOfItems - 1]
@@ -473,10 +465,10 @@ let a = class extends u {
         });
       } else if (this.direction === "UP" && this.localScrollY + i <= 0 && this.startIndex - 1 >= 0) {
         this.classList.add("by-pass"), this.pauseUpdate = !0;
-        const s = this.querySelectorAll(this.uniqueSelector), o = s[s.length - 1].getBoundingClientRect().height, l = this.containerHeight - o, p = this.containerHeight - this.localScrollY + Math.abs(i) - o - l, g = l + p;
-        this.translateY = `calc(-100% + ${g}px)`;
+        const s = this.querySelectorAll(this.uniqueSelector), o = s[s.length - 1].getBoundingClientRect().height, l = this.containerHeight - o, u = this.containerHeight - this.localScrollY + Math.abs(i) - o - l, p = l + u;
+        this.translateY = `calc(-100% + ${p}px)`;
         const w = this.startIndex - 1;
-        this.startIndex = w, this.dispatchEvent(
+        this.startIndex = w, this.style.opacity = "0", this.dispatchEvent(
           new CustomEvent("load", {
             detail: {
               indices: [this.startIndex, this.startIndex + this.numOfItems - 1]
@@ -486,11 +478,11 @@ let a = class extends u {
           [
             // Keyframes
             {
-              transform: `translateY(calc(-100% + ${g + i}px))`
+              transform: `translateY(calc(-100% + ${p + i}px))`
             },
             // Start
             {
-              transform: `translateY(calc(-100% + ${g}px))`
+              transform: `translateY(calc(-100% + ${p}px))`
             }
             // End
           ],
@@ -618,7 +610,7 @@ let a = class extends u {
     var t;
     return (t = this.ft) == null ? void 0 : t.findIndexOfPixel(i);
   }
-  onKeyDown(i, t) {
+  async onKeyDown(i, t) {
     switch (this.scrollTimeout && clearTimeout(this.scrollTimeout), i) {
       case "arrowup":
       case "arrowdown":
@@ -626,19 +618,29 @@ let a = class extends u {
         break;
       case "pagedown":
       case "pageup":
-        this.fadeInItems = !1, this.scrolling = !0, requestAnimationFrame(() => {
-          this.pauseUpdate || (this.updateMemoryWithNewHeights(), this.setScrollStateFromCurrentView(), this.accurateJumpTo(this.globalScrollY + t));
+        this.fadeInItems = !1, this.scrolling = !0, requestAnimationFrame(async () => {
+          if (this.pauseUpdate) return;
+          this.updateMemoryWithNewHeights();
+          let s = this.getCurrentGlobalScrollYFromView() + t;
+          s = Math.min(
+            Math.max(0, s),
+            this.virtualScrollHeight - this.clientHeight
+          ), await this.accurateJumpTo(s);
         });
     }
   }
   onKeyUp(i) {
-    this.tickFrame && cancelAnimationFrame(this.tickFrame), this.scrollTimeout && clearTimeout(this.scrollTimeout);
+    this.tickFrame && cancelAnimationFrame(this.tickFrame);
     const t = i.toLowerCase();
-    (t === "pageup" || t === "pagedown") && this.allStable().then(() => {
+    if (t === "escape") {
+      this.focus(), this.blur();
+      return;
+    }
+    t !== "pageup" && t !== "pagedown" && t !== "arrowup" && t !== "arrowdown" || ((t === "pageup" || t === "pagedown") && this.allStable().then(() => {
       this.pauseUpdate || this.tickFrame && cancelAnimationFrame(this.tickFrame);
-    }), t === "escape" && (this.focus(), this.blur()), this.scrollTimeout && clearTimeout(this.scrollTimeout), this.scrollTimeout = setTimeout(() => {
-      this.scrolling = !1, this.updateMemoryWithNewHeights(), this.setScrollStateFromCurrentView(), this.dispatchEvent(new CustomEvent("scroll-stopped"));
-    }, this.scrollWaitTime);
+    }), this.scrollTimeout && clearTimeout(this.scrollTimeout), this.scrollTimeout = setTimeout(() => {
+      this.scrolling = !1, this.updateMemoryWithNewHeights(), this.dispatchEvent(new CustomEvent("scroll-stopped"));
+    }, this.scrollWaitTime));
   }
   stableJumpTo(i) {
     this.tickFrame && cancelAnimationFrame(this.tickFrame), this.scrollTimeout && clearTimeout(this.scrollTimeout), this.classList.add("by-pass"), this.jumpToScrollTop(i);
@@ -703,31 +705,40 @@ let a = class extends u {
    * calling this function
    * @param scrollTop
    */
-  accurateJumpTo(i) {
-    requestAnimationFrame(() => {
-      if (this.fadeInItems = !1, this.scrolling = !0, this.pauseUpdate) return;
-      const t = this.globalScrollY, e = i - t, s = this.getComputedLocalScrollY();
+  async accurateJumpTo(i) {
+    requestAnimationFrame(async () => {
+      var r;
+      if (!this.ft || (this.fadeInItems = !1, this.scrolling = !0, this.jumpSkipping)) return;
+      const t = this.getCurrentGlobalScrollYFromView(), e = i - t;
+      this.containerHeight = parseFloat(this.containerComputedStyle.height);
+      let s = this.getComputedLocalScrollY();
       if (s + e < 0 || s + e > this.containerHeight - this.clientHeight) {
-        this.pauseUpdate = !0;
-        const r = this.startIndex;
-        this.container.style.opacity = "0", this.stableJumpTo(this.globalScrollY + e), this.updateComplete.then(() => {
-          this.allStable().then(() => {
-            this.updateMemoryWithNewHeights();
-            const l = (r !== 0 ? this.ft.getCumulativeHeight(r - 1) : 0) + s + e;
-            this.stableJumpTo(l), this.updateComplete.then(() => {
-              this.allStable().then(() => {
-                this.container.style.opacity = "1", this.dispatchEvent(new CustomEvent("scrolling"));
-              });
-            });
-          });
-        });
+        console.log("before pause update"), this.jumpSkipping = !0;
+        const o = this.startIndex;
+        this.style.opacity = "0", this.stableJumpTo(this.globalScrollY + e), await this.updateComplete, console.log("wait for slot change 1 called"), await this.waitForSlotChangedEvent(), await this.allStable(), await Promise.all(this.listItems.map((u) => u.isReady)), this.updateMemoryWithNewHeights();
+        const a = (o !== 0 ? this.ft.getCumulativeHeight(o - 1) : 0) + s + e, d = this.ft.findIndexOfPixel(
+          a
+        );
+        this.stableJumpTo(a), await this.updateComplete, d !== this.startIndex ? (console.log("new start index after render is not equal"), console.log("wait for slot change 2 called"), await this.waitForSlotChangedEvent()) : console.log("new start index after render is equal"), await this.allStable(), await Promise.all(this.listItems.map((u) => u.isReady)), this.style.opacity = "1", this.dispatchEvent(new CustomEvent("scrolling")), this.jumpSkipping = !1;
         return;
       }
-      this.stableJumpTo(this.globalScrollY + e), this.dispatchEvent(new CustomEvent("scrolling"));
+      s += e, this.translateY = `${-s}px`, this.globalScrollY = (this.startIndex > 0 ? this.ft.getCumulativeHeight(this.startIndex - 1) : 0) + s, (r = this.fakeScrollbar) == null || r.setToScrollTop(this.globalScrollY), this.dispatchEvent(new CustomEvent("scrolling"));
     });
   }
+  createSlotChangedPromise() {
+    return new Promise((i) => {
+      this.slotChangedResolve = i;
+    });
+  }
+  async waitForSlotChangedEvent() {
+    await this.createSlotChangedPromise();
+  }
+  getCurrentGlobalScrollYFromView() {
+    const i = this.getComputedLocalScrollY();
+    return (this.startIndex > 0 ? this.ft.getCumulativeHeight(this.startIndex - 1) : 0) + i;
+  }
 };
-a.styles = v`
+n.styles = v`
     * {
       box-sizing: border-box;
     }
@@ -756,68 +767,71 @@ a.styles = v`
     }
   `;
 c([
-  n({ type: Array })
-], a.prototype, "items", 2);
+  h({ type: Array })
+], n.prototype, "items", 2);
 c([
-  n({ type: String, reflect: !0 })
-], a.prototype, "defaultHeight", 2);
+  h({ type: String, reflect: !0 })
+], n.prototype, "defaultHeight", 2);
 c([
-  n({ type: Number, reflect: !0, attribute: "num-of-items" })
-], a.prototype, "numOfItems", 2);
+  h({ type: Number, reflect: !0, attribute: "num-of-items" })
+], n.prototype, "numOfItems", 2);
 c([
-  n({ type: String, reflect: !0, attribute: "unique-selector" })
-], a.prototype, "uniqueSelector", 2);
+  h({ type: String, reflect: !0, attribute: "unique-selector" })
+], n.prototype, "uniqueSelector", 2);
 c([
-  n({
+  h({
     type: Number,
     reflect: !0,
     attribute: "arrow-click-scroll-delta"
   })
-], a.prototype, "arrowClickScrollTopDelta", 2);
+], n.prototype, "arrowClickScrollTopDelta", 2);
 c([
-  n({ type: Boolean, reflect: !0, attribute: "needs-transition" })
-], a.prototype, "needsTransition", 2);
+  h({ type: Boolean, reflect: !0, attribute: "needs-transition" })
+], n.prototype, "needsTransition", 2);
 c([
-  n({ type: Object })
-], a.prototype, "fakeScrollbar", 2);
+  h({ type: Object })
+], n.prototype, "fakeScrollbar", 2);
 c([
-  n({ type: Boolean, reflect: !0, attribute: "swipe-scroll" })
-], a.prototype, "swipeScroll", 2);
+  h({ type: Boolean, reflect: !0, attribute: "swipe-scroll" })
+], n.prototype, "swipeScroll", 2);
 c([
-  n({
+  h({
     type: Number,
     reflect: !0,
     attribute: "swipe-delta-multiplier"
   })
-], a.prototype, "swipeDeltaMultiplier", 2);
+], n.prototype, "swipeDeltaMultiplier", 2);
 c([
   f()
-], a.prototype, "globalScrollY", 2);
+], n.prototype, "globalScrollY", 2);
 c([
   f()
-], a.prototype, "initialized", 2);
+], n.prototype, "initialized", 2);
 c([
   f()
-], a.prototype, "virtualScrollHeight", 2);
+], n.prototype, "virtualScrollHeight", 2);
 c([
   f()
-], a.prototype, "containerHeight", 2);
+], n.prototype, "containerHeight", 2);
 c([
   f()
-], a.prototype, "translateY", 2);
+], n.prototype, "translateY", 2);
 c([
-  n({ type: Number, reflect: !0 })
-], a.prototype, "startIndex", 2);
+  h({ type: Number, reflect: !0 })
+], n.prototype, "startIndex", 2);
 c([
-  n({ type: Boolean, reflect: !0, attribute: "fade-in-items" })
-], a.prototype, "fadeInItems", 2);
+  h({ type: Boolean, reflect: !0, attribute: "fade-in-items" })
+], n.prototype, "fadeInItems", 2);
 c([
-  n({ type: Number, reflect: !0 })
-], a.prototype, "hostClientHeight", 2);
-a = c([
-  y("missing-page-virtualizer")
-], a);
+  h({ type: Number, reflect: !0 })
+], n.prototype, "hostClientHeight", 2);
+c([
+  y()
+], n.prototype, "listItems", 2);
+n = c([
+  T("missing-page-virtualizer")
+], n);
 export {
-  a as MissingPageVirtualizer
+  n as MissingPageVirtualizer
 };
 //# sourceMappingURL=index.js.map

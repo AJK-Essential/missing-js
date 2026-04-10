@@ -1,9 +1,5 @@
 import { LitElement, html, css } from "lit";
-import {
-  customElement,
-  property,
-  queryAssignedElements,
-} from "lit/decorators.js";
+import { customElement, property } from "lit/decorators.js";
 
 @customElement("missing-dimension-reporter")
 export class MissingDimensionReporter extends LitElement {
@@ -25,23 +21,8 @@ export class MissingDimensionReporter extends LitElement {
   @property({ type: Boolean, reflect: true, attribute: "is-virtualizer-item" })
   isVirtualizerItem = false;
 
-  @queryAssignedElements({ flatten: true })
-  private _listItems!: Array<HTMLElement>;
-
-  private io = new IntersectionObserver(
-    (entries) => {
-      for (const entry of entries) {
-        if (entry.intersectionRatio === 0) {
-          entry.target.classList.remove("fade-in");
-        } else {
-          entry.target.classList.add("fade-in");
-        }
-      }
-    },
-    {
-      threshold: new Array(101).fill(0).map((_, ind) => ind / 100),
-    },
-  );
+  private _resolveReady?: ((value: ResizeObserverEntry[]) => void) | null;
+  public isReady: Promise<ResizeObserverEntry[]>;
 
   resizeObserver = new ResizeObserver((entries) => {
     const slot = this.renderRoot.querySelector("slot");
@@ -65,10 +46,22 @@ export class MissingDimensionReporter extends LitElement {
             composed: true,
           }),
         );
+        if (this._resolveReady) {
+          this._resolveReady(entries);
+          this._resolveReady = null;
+        }
       }
     }
   });
-
+  constructor() {
+    super();
+    // Initialize the "remote control" for our promise
+    // we store the resolve function in a variable to call
+    // it later so as to finish the promise
+    this.isReady = new Promise((resolve) => {
+      this._resolveReady = resolve;
+    });
+  }
   static override styles = css`
     * {
       box-sizing: border-box;
@@ -82,21 +75,7 @@ export class MissingDimensionReporter extends LitElement {
   `;
 
   override render() {
-    return html`
-      <slot
-        @slotchange="${() => {
-          this.io.disconnect();
-          if (this.isPage) {
-            if (this._listItems && this._listItems.length) {
-              this._listItems.forEach((listItem) => {
-                listItem.classList.add("observed");
-                this.io.observe(listItem);
-              });
-            }
-          }
-        }}"
-      ></slot>
-    `;
+    return html` <slot></slot> `;
   }
 
   override connectedCallback(): void {
@@ -106,16 +85,7 @@ export class MissingDimensionReporter extends LitElement {
 
   override disconnectedCallback(): void {
     this.resizeObserver.disconnect();
-    if (this.io) {
-      this.io.disconnect();
-    }
+
     super.disconnectedCallback();
-  }
-  refreshIO() {
-    if (!this.isPage) return;
-    if (this.io) {
-      this.io.disconnect();
-    }
-    this.io.observe(this);
   }
 }

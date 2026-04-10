@@ -23,6 +23,7 @@ export declare class MissingPageVirtualizer extends virtualiserKeyboardBase {
     private startIndex;
     private fadeInItems;
     private hostClientHeight;
+    listItems: Array<MissingDimensionReporter>;
     private containerResizeObserver;
     private hostResizeObserver;
     private hostSwipeListener;
@@ -42,6 +43,8 @@ export declare class MissingPageVirtualizer extends virtualiserKeyboardBase {
     private scrollTimeout?;
     private scrollWaitTime;
     private swipePhysics?;
+    private slotChangedResolve?;
+    private jumpSkipping;
     static styles: import('lit').CSSResult;
     render(): import('lit-html').TemplateResult<1>;
     initialize(): void;
@@ -78,7 +81,7 @@ export declare class MissingPageVirtualizer extends virtualiserKeyboardBase {
     updateMemoryWithNewHeights(): void;
     getCurrentPageIndex(): number | undefined;
     getPageIndexForScrollTop(scrollTop: number): number | undefined;
-    protected onKeyDown(key: "arrowdown" | "arrowup" | "pageup" | "pagedown", increment: number): void;
+    protected onKeyDown(key: "arrowdown" | "arrowup" | "pageup" | "pagedown", increment: number): Promise<void>;
     protected onKeyUp(key: typeof KeyboardEvent.prototype.key): void;
     protected stableJumpTo(scrollTop: number): void;
     onPageResize(index: number, element: MissingDimensionReporter): void;
@@ -101,6 +104,9 @@ export declare class MissingPageVirtualizer extends virtualiserKeyboardBase {
      * calling this function
      * @param scrollTop
      */
-    accurateJumpTo(scrollTop: number): void;
+    accurateJumpTo(scrollTop: number): Promise<void>;
+    private createSlotChangedPromise;
+    private waitForSlotChangedEvent;
+    private getCurrentGlobalScrollYFromView;
 }
 //# sourceMappingURL=page-virtualizer.d.ts.map

@@ -154,12 +154,6 @@ feed-card {
     height: 150px;
   }
 }
-missing-page-virtualizer[fade-in-items] .observed {
-  opacity: 0;
-}
-missing-page-virtualizer[fade-in-items] .fade-in {
-  opacity: 1;
-}
 .instruction-panel {
   display: flex;
   flex-direction: column;

@@ -8,14 +8,6 @@ import { property as C, state as L, customElement as it } from "lit/decorators.j
  * Licensed under the MIT License.
  * Free for personal and commercial use.
  */
-/**
- * Missing JS - @missing-js/fake-scrollbar
- * @license MIT
- * Copyright (c) 2026 Missing JS / AJK-Essential.
- * ---------------------------------------------------------
- * Licensed under the MIT License.
- * Free for personal and commercial use.
- */
 var M = function(t, r) {
   return M = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(e, n) {
     e.__proto__ = n;

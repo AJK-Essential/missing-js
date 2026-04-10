@@ -1,5 +1,10 @@
 import { html, css } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
+import {
+  customElement,
+  property,
+  queryAssignedElements,
+  state,
+} from "lit/decorators.js";
 
 import { MissingFakeScrollbar } from "@missing-js/fake-scrollbar";
 import { MissingDimensionReporter } from "@missing-js/dimension-reporter";
@@ -77,6 +82,9 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
   @property({ type: Number, reflect: true })
   private hostClientHeight = this.clientHeight;
 
+  @queryAssignedElements()
+  listItems!: Array<MissingDimensionReporter>;
+
   private containerResizeObserver = new ResizeObserver(
     this.containerResize.bind(this),
   );
@@ -101,6 +109,8 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
   private scrollTimeout?: number;
   private scrollWaitTime = 250;
   private swipePhysics?: MissingSwipePhysicsEmitter;
+  private slotChangedResolve?: (value: void) => void;
+  private jumpSkipping = false;
 
   static override styles = css`
     * {
@@ -142,7 +152,12 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
             >
               <slot
                 @slotchange="${async (e: Event) => {
-                  // TODO: See if this function can also be removed.
+                  if (this.slotChangedResolve) {
+                    this.slotChangedResolve();
+                    this.slotChangedResolve = undefined;
+                  }
+                  console.log("slot change called");
+                  // TODO: See if this below function can also be removed.
                   if (this.pauseUpdate) {
                     this.classList.add("by-pass");
                     // const slot = e.currentTarget as HTMLSlotElement;
@@ -162,6 +177,7 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
                         : 0) + this.localScrollY;
                     this.fakeScrollbar?.setToScrollTop(this.globalScrollY);
                     this.pauseUpdate = false;
+                    this.style.opacity = "1";
                     this.dispatchEvent(new CustomEvent("scroll-stopped"));
                     if (this.scrollTimeout) {
                       clearTimeout(this.scrollTimeout);
@@ -395,6 +411,9 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
       const newTransformY = fixedBlockHeight + extraOffset;
       this.translateY = `${-newTransformY}px`;
       this.startIndex = newIndex;
+      // we need to hide the opacity temporarily so as to avoid FOUC.
+      // it is restored later in the slot change update if check
+      this.style.opacity = "0";
       this.dispatchEvent(
         new CustomEvent("load", {
           detail: {
@@ -440,6 +459,9 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
       this.translateY = `calc(-100% + ${transformYFromBottom}px)`;
       const newIndex = this.startIndex - 1;
       this.startIndex = newIndex;
+      // we need to hide the opacity temporarily so as to avoid FOUC.
+      // it is restored later in the slot change update if check
+      this.style.opacity = "0";
       this.dispatchEvent(
         new CustomEvent("load", {
           detail: {
@@ -707,10 +729,10 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
     return this.ft?.findIndexOfPixel(scrollTop);
   }
 
-  protected override onKeyDown(
+  protected override async onKeyDown(
     key: "arrowdown" | "arrowup" | "pageup" | "pagedown",
     increment: number,
-  ): void {
+  ) {
     if (this.scrollTimeout) {
       clearTimeout(this.scrollTimeout);
     }
@@ -727,11 +749,17 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
       case "pageup": {
         this.fadeInItems = false;
         this.scrolling = true;
-        requestAnimationFrame(() => {
+        requestAnimationFrame(async () => {
           if (this.pauseUpdate) return;
           this.updateMemoryWithNewHeights();
-          this.setScrollStateFromCurrentView();
-          this.accurateJumpTo(this.globalScrollY + increment);
+          let currentGlobalScrollY = this.getCurrentGlobalScrollYFromView();
+          let requiredGlobalScrollY = currentGlobalScrollY + increment;
+          // setting it within limits. so that pageup and pagedown still happen
+          requiredGlobalScrollY = Math.min(
+            Math.max(0, requiredGlobalScrollY),
+            this.virtualScrollHeight - this.clientHeight,
+          );
+          await this.accurateJumpTo(requiredGlobalScrollY);
         });
       }
     }
@@ -740,10 +768,20 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
     if (this.tickFrame) {
       cancelAnimationFrame(this.tickFrame);
     }
-    if (this.scrollTimeout) {
-      clearTimeout(this.scrollTimeout);
-    }
     const lowerCaseKey = key.toLowerCase();
+    if (lowerCaseKey === "escape") {
+      this.focus();
+      this.blur();
+      return;
+    }
+    if (
+      lowerCaseKey !== "pageup" &&
+      lowerCaseKey !== "pagedown" &&
+      lowerCaseKey !== "arrowup" &&
+      lowerCaseKey !== "arrowdown"
+    ) {
+      return;
+    }
     if (lowerCaseKey === "pageup" || lowerCaseKey === "pagedown") {
       this.allStable().then(() => {
         if (this.pauseUpdate) return;
@@ -752,17 +790,14 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
         }
       });
     }
-    if (lowerCaseKey === "escape") {
-      this.focus();
-      this.blur();
-    }
     if (this.scrollTimeout) {
       clearTimeout(this.scrollTimeout);
     }
     this.scrollTimeout = setTimeout(() => {
       this.scrolling = false;
       this.updateMemoryWithNewHeights();
-      this.setScrollStateFromCurrentView();
+      // we dont need to update global scroll Y here since
+      // its taken care of by the functions in keydown.
       this.dispatchEvent(new CustomEvent("scroll-stopped"));
     }, this.scrollWaitTime);
   }
@@ -871,46 +906,88 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
    * calling this function
    * @param scrollTop
    */
-  public accurateJumpTo(scrollTop: number) {
-    requestAnimationFrame(() => {
+  public async accurateJumpTo(scrollTop: number) {
+    requestAnimationFrame(async () => {
+      if (!this.ft) return;
       this.fadeInItems = false;
       this.scrolling = true;
-      if (this.pauseUpdate) return;
-      const currentGlobalScrollY = this.globalScrollY;
+      if (this.jumpSkipping) return;
+      const currentGlobalScrollY = this.getCurrentGlobalScrollYFromView();
       const increment = scrollTop - currentGlobalScrollY;
-      const localScrollY = this.getComputedLocalScrollY();
+      this.containerHeight = parseFloat(this.containerComputedStyle.height);
+      let localScrollY = this.getComputedLocalScrollY();
       if (
         localScrollY + increment < 0 ||
         localScrollY + increment > this.containerHeight - this.clientHeight
       ) {
-        this.pauseUpdate = true;
+        console.log("before pause update");
+        this.jumpSkipping = true;
         const previousStartIndex = this.startIndex;
-        this.container.style.opacity = "0";
+        this.style.opacity = "0";
+        // the first render
         this.stableJumpTo(this.globalScrollY + increment);
-        this.updateComplete.then(() => {
-          this.allStable().then(() => {
-            this.updateMemoryWithNewHeights();
-            const finalRenderPreviousStartIndexCumulativePreviousIndexHeight =
-              previousStartIndex !== 0
-                ? this.ft!.getCumulativeHeight(previousStartIndex - 1)
-                : 0;
-            const finalGlobalScrollYAfterRender =
-              finalRenderPreviousStartIndexCumulativePreviousIndexHeight +
-              localScrollY +
-              increment;
-            this.stableJumpTo(finalGlobalScrollYAfterRender);
-            this.updateComplete.then(() => {
-              this.allStable().then(() => {
-                this.container.style.opacity = "1";
-                this.dispatchEvent(new CustomEvent("scrolling"));
-              });
-            });
-          });
-        });
+        await this.updateComplete;
+        console.log("wait for slot change 1 called");
+        await this.waitForSlotChangedEvent();
+        await this.allStable();
+        await Promise.all(this.listItems.map((qE) => qE.isReady));
+        this.updateMemoryWithNewHeights();
+        // this time the updated new heights of where we landed is absorbed
+        // into memory. now using that updated memory, jump to our
+        // actual view.
+        const finalRenderPreviousStartIndexCumulativePreviousIndexHeight =
+          previousStartIndex !== 0
+            ? this.ft!.getCumulativeHeight(previousStartIndex - 1)
+            : 0;
+        const finalGlobalScrollYAfterRender =
+          finalRenderPreviousStartIndexCumulativePreviousIndexHeight +
+          localScrollY +
+          increment;
+        const newStartIndex = this.ft.findIndexOfPixel(
+          finalGlobalScrollYAfterRender,
+        );
+        this.stableJumpTo(finalGlobalScrollYAfterRender);
+        await this.updateComplete;
+        // on the 2nd render, the new index may or maynot be
+        // the same index as the startindex.
+        if (newStartIndex !== this.startIndex) {
+          console.log("new start index after render is not equal");
+          console.log("wait for slot change 2 called");
+          await this.waitForSlotChangedEvent();
+        } else {
+          console.log("new start index after render is equal");
+        }
+        await this.allStable();
+        await Promise.all(this.listItems.map((qE) => qE.isReady));
+        this.style.opacity = "1";
+        this.dispatchEvent(new CustomEvent("scrolling"));
+        this.jumpSkipping = false;
         return;
       }
-      this.stableJumpTo(this.globalScrollY + increment);
+      localScrollY += increment;
+      this.translateY = `${-localScrollY}px`;
+      this.globalScrollY =
+        (this.startIndex > 0
+          ? this.ft!.getCumulativeHeight(this.startIndex - 1)
+          : 0) + localScrollY;
+      this.fakeScrollbar?.setToScrollTop(this.globalScrollY);
       this.dispatchEvent(new CustomEvent("scrolling"));
     });
+  }
+  private createSlotChangedPromise() {
+    return new Promise((resolve) => {
+      this.slotChangedResolve = resolve;
+    });
+  }
+  private async waitForSlotChangedEvent() {
+    await this.createSlotChangedPromise();
+  }
+  private getCurrentGlobalScrollYFromView() {
+    const localScrollY = this.getComputedLocalScrollY();
+    const globalScrollY =
+      (this.startIndex > 0
+        ? this.ft!.getCumulativeHeight(this.startIndex - 1)
+        : 0) + localScrollY;
+    return globalScrollY;
   }
 }

@@ -39,13 +39,17 @@ export class virtualiserKeyboardBase extends LitElement {
     attribute: "default-page-down-navigation",
   })
   public defaultPageDownNavigation = false;
-
+  /**
+   * Make sure these jumps are less than the default height of each
+   * pages. Otherwise it will jump more and on later
+   * scrolling back or forward, it will correct itself
+   */
   @property({ type: Object })
   public keyboardIncrements = {
     arrowdown: 5,
     arrowup: -5,
-    pagedown: 2000,
-    pageup: -2000,
+    pagedown: 100,
+    pageup: -100,
   };
 
   @property({

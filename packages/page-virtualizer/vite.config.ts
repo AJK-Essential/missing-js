@@ -1,6 +1,5 @@
 import { defineConfig } from "vite";
 import { getBaseConfig } from "../../vite.config.base";
-import { resolve } from "path";
 
 export default defineConfig(async () => {
   const baseConfig = getBaseConfig(__dirname, "@missing-js/page-virtualizer");
@@ -10,6 +9,7 @@ export default defineConfig(async () => {
     build: {
       ...baseConfig.build,
       rollupOptions: {
+        ...baseConfig.build?.rollupOptions,
         // We ONLY externalize lit.
         external: [/^lit/],
       },

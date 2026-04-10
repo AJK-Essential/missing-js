@@ -7,6 +7,11 @@ export declare class virtualiserKeyboardBase extends LitElement {
     defaultArrowDownNavigation: boolean;
     defaultPageUpNavigation: boolean;
     defaultPageDownNavigation: boolean;
+    /**
+     * Make sure these jumps are less than the default height of each
+     * pages. Otherwise it will jump more and on later
+     * scrolling back or forward, it will correct itself
+     */
     keyboardIncrements: {
         arrowdown: number;
         arrowup: number;
