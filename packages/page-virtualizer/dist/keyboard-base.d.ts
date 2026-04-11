@@ -24,6 +24,7 @@ export declare class virtualiserKeyboardBase extends LitElement {
     private keyboardDownEventListener;
     private keyboardUpEventListener;
     private documentKeyboardDownListener;
+    protected noOpacityChange: boolean;
     wait(ms: number): Promise<unknown>;
     protected setupKeyboardInteractions(): void;
     getNextScrollDelta(tabbedElement: HTMLElement, direction: "forwards" | "backwards", thisTop: number, thisBottom: number): number;

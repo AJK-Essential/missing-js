@@ -21,7 +21,6 @@ export declare class MissingPageVirtualizer extends virtualiserKeyboardBase {
     private containerHeight;
     private translateY;
     private startIndex;
-    private fadeInItems;
     private hostClientHeight;
     listItems: Array<MissingDimensionReporter>;
     private containerResizeObserver;

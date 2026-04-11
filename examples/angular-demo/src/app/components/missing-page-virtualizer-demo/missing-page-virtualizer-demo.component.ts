@@ -83,18 +83,20 @@ export class MissingPageVirtualizerDemo implements AfterViewInit {
   }
 
   updatePageData(isScrolling: boolean) {
-    if (this.scroller) {
-      const currentScrollTop = this.scroller.getCurrentScrollTop();
-      const startPageIndex = this.scroller.getPageIndexForScrollTop(currentScrollTop);
-      const endPageIndex = this.scroller.getPageIndexForScrollTop(
-        currentScrollTop + this.scroller.clientHeight,
-      );
-      if (typeof startPageIndex === 'number' && typeof endPageIndex === 'number') {
-        this.startItem = startPageIndex * this.bucketSize + 1;
-        this.endItem = endPageIndex * this.bucketSize + this.bucketSize;
+    requestAnimationFrame(() => {
+      if (this.scroller) {
+        const currentScrollTop = this.scroller.getCurrentScrollTop();
+        const startPageIndex = this.scroller.getPageIndexForScrollTop(currentScrollTop);
+        const endPageIndex = this.scroller.getPageIndexForScrollTop(
+          currentScrollTop + this.scroller.clientHeight,
+        );
+        if (typeof startPageIndex === 'number' && typeof endPageIndex === 'number') {
+          this.startItem = startPageIndex * this.bucketSize + 1;
+          this.endItem = endPageIndex * this.bucketSize + this.bucketSize;
+        }
       }
-    }
-    this.isScrolling = isScrolling;
+      this.isScrolling = isScrolling;
+    });
   }
 
   loadMore() {
@@ -152,7 +154,6 @@ export class MissingPageVirtualizerDemo implements AfterViewInit {
       this.hostElement.style.setProperty('--panel-height', `${target.height}px`);
     }, 0);
     e.stopPropagation();
-    console.log(e);
   }
   adjustScrollerSwipeDelta(e: Event) {
     this.swipeDeltaFromInput = parseFloat((e.target as HTMLInputElement).value);

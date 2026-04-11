@@ -76,9 +76,6 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
   @property({ type: Number, reflect: true })
   private startIndex = 0;
 
-  @property({ type: Boolean, reflect: true, attribute: "fade-in-items" })
-  private fadeInItems = false;
-
   @property({ type: Number, reflect: true })
   private hostClientHeight = this.clientHeight;
 
@@ -156,7 +153,6 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
                     this.slotChangedResolve();
                     this.slotChangedResolve = undefined;
                   }
-                  console.log("slot change called");
                   // TODO: See if this below function can also be removed.
                   if (this.pauseUpdate) {
                     this.classList.add("by-pass");
@@ -184,7 +180,6 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
                     }
                     this.scrollTimeout = setTimeout(() => {
                       this.scrolling = false;
-                      this.fadeInItems = false;
                     }, this.scrollWaitTime);
                   }
                 }}"
@@ -299,7 +294,6 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
     if (this.scrollTimeout) {
       clearTimeout(this.scrollTimeout);
     }
-    this.fadeInItems = false;
     this.classList.add("by-pass");
     this.jumpToScrollTop(fakeScrollbar.computedTargetScrollTop);
     this.dispatchEvent(new CustomEvent("scrolling"));
@@ -380,7 +374,6 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
     if (this.scrollTimeout) {
       clearTimeout(this.scrollTimeout);
     }
-    this.fadeInItems = true;
     this.updateMemoryWithNewHeights();
     this.updateContainerHeight();
     this.localScrollY = this.getComputedLocalScrollY();
@@ -413,7 +406,11 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
       this.startIndex = newIndex;
       // we need to hide the opacity temporarily so as to avoid FOUC.
       // it is restored later in the slot change update if check
-      this.style.opacity = "0";
+      if (this.noOpacityChange) {
+        this.noOpacityChange = false;
+      } else {
+        this.style.opacity = "0";
+      }
       this.dispatchEvent(
         new CustomEvent("load", {
           detail: {
@@ -461,7 +458,11 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
       this.startIndex = newIndex;
       // we need to hide the opacity temporarily so as to avoid FOUC.
       // it is restored later in the slot change update if check
-      this.style.opacity = "0";
+      if (this.noOpacityChange) {
+        this.noOpacityChange = false;
+      } else {
+        this.style.opacity = "0";
+      }
       this.dispatchEvent(
         new CustomEvent("load", {
           detail: {
@@ -509,7 +510,6 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
           }
           this.scrollTimeout = setTimeout(() => {
             this.scrolling = false;
-            this.fadeInItems = false;
             this.dispatchEvent(new CustomEvent("scroll-stopped"));
           }, this.scrollWaitTime);
         }
@@ -740,14 +740,12 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
       case "arrowup":
       case "arrowdown":
         {
-          this.fadeInItems = true;
           this.scrolling = true;
           this.repeatedScrollByPixels(increment);
         }
         break;
       case "pagedown":
       case "pageup": {
-        this.fadeInItems = false;
         this.scrolling = true;
         requestAnimationFrame(async () => {
           if (this.pauseUpdate) return;
@@ -909,7 +907,6 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
   public async accurateJumpTo(scrollTop: number) {
     requestAnimationFrame(async () => {
       if (!this.ft) return;
-      this.fadeInItems = false;
       this.scrolling = true;
       if (this.jumpSkipping) return;
       const currentGlobalScrollY = this.getCurrentGlobalScrollYFromView();
@@ -920,14 +917,12 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
         localScrollY + increment < 0 ||
         localScrollY + increment > this.containerHeight - this.clientHeight
       ) {
-        console.log("before pause update");
         this.jumpSkipping = true;
         const previousStartIndex = this.startIndex;
         this.style.opacity = "0";
         // the first render
         this.stableJumpTo(this.globalScrollY + increment);
         await this.updateComplete;
-        console.log("wait for slot change 1 called");
         await this.waitForSlotChangedEvent();
         await this.allStable();
         await Promise.all(this.listItems.map((qE) => qE.isReady));
@@ -951,11 +946,7 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
         // on the 2nd render, the new index may or maynot be
         // the same index as the startindex.
         if (newStartIndex !== this.startIndex) {
-          console.log("new start index after render is not equal");
-          console.log("wait for slot change 2 called");
           await this.waitForSlotChangedEvent();
-        } else {
-          console.log("new start index after render is equal");
         }
         await this.allStable();
         await Promise.all(this.listItems.map((qE) => qE.isReady));

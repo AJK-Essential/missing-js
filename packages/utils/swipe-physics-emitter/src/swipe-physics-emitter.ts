@@ -122,10 +122,10 @@ export class MissingSwipePhysicsEmitter {
     const elapsed = performance.now() - this.startTime;
 
     // If it's a tap (small movement, short time), don't trigger inertia
-    // if (moveDistX < 10 && moveDistY < 10 && elapsed < 200) {
-    //   this.stopMovement();
-    //   return;
-    // }
+    if (moveDistX < 10 && moveDistY < 10 && elapsed < 200) {
+      this.stopMovement();
+      return;
+    }
 
     this.animationId = requestAnimationFrame(this.physicsLoop);
   }

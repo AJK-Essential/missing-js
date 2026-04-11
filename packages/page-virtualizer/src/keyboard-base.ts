@@ -65,6 +65,9 @@ export class virtualiserKeyboardBase extends LitElement {
   private keyboardDownEventListener = this.keyboardDownEventCB.bind(this);
   private keyboardUpEventListener = this.keyboardUpEventCB.bind(this);
   private documentKeyboardDownListener = this.documentKeyboardDownCB.bind(this);
+  // inorder to prevent opacity change of container (that was there to prevent FOUC)
+  // for the tab scenario which does not need the visual hiding.
+  protected noOpacityChange = false;
 
   async wait(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -136,6 +139,7 @@ export class virtualiserKeyboardBase extends LitElement {
               }
               this.tabPressed = false;
               this.shiftPressed = false;
+              this.noOpacityChange = true;
               this.scrollByAmt(requiredScrollDelta as number);
               this.scrollCheck();
             } else if (this.tabPressed && this.shiftPressed) {
@@ -182,6 +186,7 @@ export class virtualiserKeyboardBase extends LitElement {
               }
               this.tabPressed = false;
               this.shiftPressed = false;
+              this.noOpacityChange = true;
               this.scrollByAmt(requiredScrollDelta as number);
               this.scrollCheck();
             }
