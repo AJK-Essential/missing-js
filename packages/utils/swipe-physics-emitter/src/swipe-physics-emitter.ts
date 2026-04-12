@@ -25,8 +25,6 @@ export class MissingSwipePhysicsEmitter {
 
   private animationId: number | null = null;
 
-  // Friction: 0.88 is "heavy", 0.95 is "standard"
-
   private target?: HTMLElement | null;
 
   private pointerMoveListener = this.onPointerMove.bind(this);
@@ -35,6 +33,8 @@ export class MissingSwipePhysicsEmitter {
 
   public emitFor(target: HTMLElement): void {
     this.target = target;
+    // 'pan-y' or 'none' depending on your vertical scroll needs.
+    // 'none' is safest for full custom control.
     this.target.style.touchAction = "none";
     this.target.addEventListener("pointerdown", this.pointerDownListener);
   }
@@ -57,15 +57,12 @@ export class MissingSwipePhysicsEmitter {
       velocityY: this.velocityY,
       isDragging,
     };
-    const MissingSwipePhysicsEvent: MissingSwipePhysicsEvent = new CustomEvent(
-      "swipe-detected",
-      {
-        detail,
-        bubbles: true,
-        composed: true,
-      },
-    );
-    this.target.dispatchEvent(MissingSwipePhysicsEvent);
+    const event: MissingSwipePhysicsEvent = new CustomEvent("swipe-detected", {
+      detail,
+      bubbles: true,
+      composed: true,
+    });
+    this.target.dispatchEvent(event);
   }
 
   private onPointerDown(e: PointerEvent) {
@@ -97,11 +94,15 @@ export class MissingSwipePhysicsEmitter {
     const deltaTime = now - this.lastTime;
 
     if (deltaTime > 0) {
-      this.velocityX = deltaX / deltaTime;
-      this.velocityY = deltaY / deltaTime;
+      const instantaneousVX = deltaX / deltaTime;
+      const instantaneousVY = deltaY / deltaTime;
+
+      // WEIGHTED SMOOTHING: Prevents a single jittery frame at the end
+      // from killing the momentum (the 'Android Stickiness' fix).
+      this.velocityX = this.velocityX * 0.6 + instantaneousVX * 0.4;
+      this.velocityY = this.velocityY * 0.6 + instantaneousVY * 0.4;
     }
 
-    // Dispatch immediate finger movement
     this.dispatch(deltaX, deltaY, true);
 
     this.lastX = e.clientX;
@@ -112,39 +113,64 @@ export class MissingSwipePhysicsEmitter {
   private onPointerUp(e: PointerEvent) {
     if (!this.isDragging) return;
     if (!this.target) return;
+
     this.target.releasePointerCapture(e.pointerId);
     this.target.removeEventListener("pointermove", this.pointerMoveListener);
     this.target.removeEventListener("pointerup", this.pointerUpListener);
+
     this.isDragging = false;
 
+    const now = performance.now();
     const moveDistX = Math.abs(e.clientX - this.startX);
     const moveDistY = Math.abs(e.clientY - this.startY);
-    const elapsed = performance.now() - this.startTime;
+    const elapsedSinceStart = now - this.startTime;
+    const timeSinceLastMove = now - this.lastTime;
 
-    // If it's a tap (small movement, short time), don't trigger inertia
-    if (moveDistX < 10 && moveDistY < 10 && elapsed < 200) {
+    // STALE CHECK: If the user held their finger still for > 50ms before lifting,
+    // they didn't want to 'fling', they wanted to 'stop'.
+    if (timeSinceLastMove > 50) {
       this.stopMovement();
       return;
     }
 
+    // TAP CHECK: Small movement, short time.
+    if (moveDistX < 10 && moveDistY < 10 && elapsedSinceStart < 200) {
+      this.stopMovement();
+      return;
+    }
+
+    // Reset lastTime to current for the physicsLoop delta calculation
+    this.lastTime = performance.now();
     this.animationId = requestAnimationFrame(this.physicsLoop);
   }
 
   private physicsLoop = (): void => {
     if (this.isDragging) return;
 
-    this.velocityX *= this.friction;
-    this.velocityY *= this.friction;
+    const now = performance.now();
+    const dt = now - this.lastTime;
+    this.lastTime = now;
 
-    // Calculate deltas based on velocity projected over a 16ms frame
-    const deltaX = this.velocityX * 16;
-    const deltaY = this.velocityY * 16;
+    // PROTECTION: Avoid large time jumps (e.g., if the tab was backgrounded)
+    const cappedDt = Math.min(dt, 64);
+
+    // TIME-NORMALIZED FRICTION: Ensures consistent feel on 60Hz and 120Hz screens.
+    // We use power scaling so friction is independent of frame rate.
+    const frictionPower = cappedDt / 16.66;
+    this.velocityX *= Math.pow(this.friction, frictionPower);
+    this.velocityY *= Math.pow(this.friction, frictionPower);
+
+    // Calculate delta based on real time passed
+    const deltaX = this.velocityX * cappedDt;
+    const deltaY = this.velocityY * cappedDt;
 
     this.dispatch(deltaX, deltaY, false);
 
-    // Stop when both axes have effectively stopped
-    if (Math.abs(this.velocityX) > 0.05 || Math.abs(this.velocityY) > 0.05) {
+    // Stop threshold: check both axes
+    if (Math.abs(this.velocityX) > 0.01 || Math.abs(this.velocityY) > 0.01) {
       this.animationId = requestAnimationFrame(this.physicsLoop);
+    } else {
+      this.stopMovement();
     }
   };
 

@@ -1,5 +1,5 @@
-import { LitElement as S, css as y, html as b } from "lit";
-import { property as h, state as f, queryAssignedElements as v, customElement as T } from "lit/decorators.js";
+import { LitElement as S, css as v, html as b } from "lit";
+import { property as h, state as f, queryAssignedElements as y, customElement as T } from "lit/decorators.js";
 /**
  * Missing JS - @missing-js/page-virtualizer (Pro)
  * @license PolyForm Noncommercial 1.0.0
@@ -62,10 +62,10 @@ class C {
     return this.values;
   }
 }
-var k = Object.defineProperty, m = (i, t, e, s) => {
+var Y = Object.defineProperty, m = (i, t, e, s) => {
   for (var r = void 0, o = i.length - 1, l; o >= 0; o--)
     (l = i[o]) && (r = l(t, e, r) || r);
-  return r && k(t, e, r), r;
+  return r && Y(t, e, r), r;
 };
 class g extends S {
   constructor() {
@@ -256,13 +256,16 @@ m([
  * Licensed under the MIT License.
  * Free for personal and commercial use.
  */
-class Y {
+class k {
   constructor() {
     this.friction = 0.95, this.velocityX = 0, this.velocityY = 0, this.isDragging = !1, this.lastX = 0, this.lastY = 0, this.lastTime = 0, this.startX = 0, this.startY = 0, this.startTime = 0, this.animationId = null, this.pointerMoveListener = this.onPointerMove.bind(this), this.pointerDownListener = this.onPointerDown.bind(this), this.pointerUpListener = this.onPointerUp.bind(this), this.physicsLoop = () => {
       if (this.isDragging) return;
-      this.velocityX *= this.friction, this.velocityY *= this.friction;
-      const t = this.velocityX * 16, e = this.velocityY * 16;
-      this.dispatch(t, e, !1), (Math.abs(this.velocityX) > 0.05 || Math.abs(this.velocityY) > 0.05) && (this.animationId = requestAnimationFrame(this.physicsLoop));
+      const t = performance.now(), e = t - this.lastTime;
+      this.lastTime = t;
+      const s = Math.min(e, 64), r = s / 16.66;
+      this.velocityX *= Math.pow(this.friction, r), this.velocityY *= Math.pow(this.friction, r);
+      const o = this.velocityX * s, l = this.velocityY * s;
+      this.dispatch(o, l, !1), Math.abs(this.velocityX) > 0.01 || Math.abs(this.velocityY) > 0.01 ? this.animationId = requestAnimationFrame(this.physicsLoop) : this.stopMovement();
     };
   }
   emitFor(t) {
@@ -279,14 +282,11 @@ class Y {
       velocityX: this.velocityX,
       velocityY: this.velocityY,
       isDragging: s
-    }, o = new CustomEvent(
-      "swipe-detected",
-      {
-        detail: r,
-        bubbles: !0,
-        composed: !0
-      }
-    );
+    }, o = new CustomEvent("swipe-detected", {
+      detail: r,
+      bubbles: !0,
+      composed: !0
+    });
     this.target.dispatchEvent(o);
   }
   onPointerDown(t) {
@@ -295,17 +295,25 @@ class Y {
   onPointerMove(t) {
     if (!this.isDragging) return;
     const e = performance.now(), s = t.clientX - this.lastX, r = t.clientY - this.lastY, o = e - this.lastTime;
-    o > 0 && (this.velocityX = s / o, this.velocityY = r / o), this.dispatch(s, r, !0), this.lastX = t.clientX, this.lastY = t.clientY, this.lastTime = e;
+    if (o > 0) {
+      const l = s / o, a = r / o;
+      this.velocityX = this.velocityX * 0.6 + l * 0.4, this.velocityY = this.velocityY * 0.6 + a * 0.4;
+    }
+    this.dispatch(s, r, !0), this.lastX = t.clientX, this.lastY = t.clientY, this.lastTime = e;
   }
   onPointerUp(t) {
     if (!this.isDragging || !this.target) return;
     this.target.releasePointerCapture(t.pointerId), this.target.removeEventListener("pointermove", this.pointerMoveListener), this.target.removeEventListener("pointerup", this.pointerUpListener), this.isDragging = !1;
-    const e = Math.abs(t.clientX - this.startX), s = Math.abs(t.clientY - this.startY), r = performance.now() - this.startTime;
-    if (e < 10 && s < 10 && r < 200) {
+    const e = performance.now(), s = Math.abs(t.clientX - this.startX), r = Math.abs(t.clientY - this.startY), o = e - this.startTime;
+    if (e - this.lastTime > 50) {
       this.stopMovement();
       return;
     }
-    this.animationId = requestAnimationFrame(this.physicsLoop);
+    if (s < 10 && r < 10 && o < 200) {
+      this.stopMovement();
+      return;
+    }
+    this.lastTime = performance.now(), this.animationId = requestAnimationFrame(this.physicsLoop);
   }
   destroy() {
     this.target && (this.target.removeEventListener("pointerdown", this.pointerDownListener), this.target.removeEventListener("pointermove", this.pointerMoveListener), this.target.removeEventListener("pointerup", this.pointerUpListener), this.target = null), this.stopMovement();
@@ -378,7 +386,7 @@ let n = class extends g {
   }
   updated(i) {
     var t;
-    super.updated(i), this.fakeScrollbar && (i.has("hostClientHeight") || i.has("virtualScrollHeight")) && (this.fakeScrollbar.targetClientHeight = this.hostClientHeight, this.fakeScrollbar.targetScrollHeight = this.virtualScrollHeight), i.has("swipeScroll") && (this.swipeScroll ? (this.swipePhysics = new Y(), this.swipePhysics.emitFor(this)) : (t = this.swipePhysics) == null || t.destroy());
+    super.updated(i), this.fakeScrollbar && (i.has("hostClientHeight") || i.has("virtualScrollHeight")) && (this.fakeScrollbar.targetClientHeight = this.hostClientHeight, this.fakeScrollbar.targetScrollHeight = this.virtualScrollHeight), i.has("swipeScroll") && (this.swipeScroll ? (this.swipePhysics = new k(), this.swipePhysics.emitFor(this)) : (t = this.swipePhysics) == null || t.destroy());
   }
   disconnectedCallback() {
     this.removeEventListener(
@@ -745,7 +753,7 @@ let n = class extends g {
     return (this.startIndex > 0 ? this.ft.getCumulativeHeight(this.startIndex - 1) : 0) + i;
   }
 };
-n.styles = y`
+n.styles = v`
     * {
       box-sizing: border-box;
     }
@@ -830,7 +838,7 @@ c([
   h({ type: Number, reflect: !0 })
 ], n.prototype, "hostClientHeight", 2);
 c([
-  v()
+  y()
 ], n.prototype, "listItems", 2);
 n = c([
   T("missing-page-virtualizer")

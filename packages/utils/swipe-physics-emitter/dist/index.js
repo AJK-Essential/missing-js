@@ -6,13 +6,16 @@
  * Licensed under the MIT License.
  * Free for personal and commercial use.
  */
-class o {
+class a {
   constructor() {
     this.friction = 0.95, this.velocityX = 0, this.velocityY = 0, this.isDragging = !1, this.lastX = 0, this.lastY = 0, this.lastTime = 0, this.startX = 0, this.startY = 0, this.startTime = 0, this.animationId = null, this.pointerMoveListener = this.onPointerMove.bind(this), this.pointerDownListener = this.onPointerDown.bind(this), this.pointerUpListener = this.onPointerUp.bind(this), this.physicsLoop = () => {
       if (this.isDragging) return;
-      this.velocityX *= this.friction, this.velocityY *= this.friction;
-      const t = this.velocityX * 16, i = this.velocityY * 16;
-      this.dispatch(t, i, !1), (Math.abs(this.velocityX) > 0.05 || Math.abs(this.velocityY) > 0.05) && (this.animationId = requestAnimationFrame(this.physicsLoop));
+      const t = performance.now(), e = t - this.lastTime;
+      this.lastTime = t;
+      const i = Math.min(e, 64), s = i / 16.66;
+      this.velocityX *= Math.pow(this.friction, s), this.velocityY *= Math.pow(this.friction, s);
+      const n = this.velocityX * i, o = this.velocityY * i;
+      this.dispatch(n, o, !1), Math.abs(this.velocityX) > 0.01 || Math.abs(this.velocityY) > 0.01 ? this.animationId = requestAnimationFrame(this.physicsLoop) : this.stopMovement();
     };
   }
   emitFor(t) {
@@ -21,22 +24,19 @@ class o {
   stopMovement() {
     this.animationId && (cancelAnimationFrame(this.animationId), this.animationId = null), this.velocityX = 0, this.velocityY = 0;
   }
-  dispatch(t, i, e) {
+  dispatch(t, e, i) {
     if (!this.target) return;
     const s = {
       deltaX: t,
-      deltaY: i,
+      deltaY: e,
       velocityX: this.velocityX,
       velocityY: this.velocityY,
-      isDragging: e
-    }, n = new CustomEvent(
-      "swipe-detected",
-      {
-        detail: s,
-        bubbles: !0,
-        composed: !0
-      }
-    );
+      isDragging: i
+    }, n = new CustomEvent("swipe-detected", {
+      detail: s,
+      bubbles: !0,
+      composed: !0
+    });
     this.target.dispatchEvent(n);
   }
   onPointerDown(t) {
@@ -44,24 +44,32 @@ class o {
   }
   onPointerMove(t) {
     if (!this.isDragging) return;
-    const i = performance.now(), e = t.clientX - this.lastX, s = t.clientY - this.lastY, n = i - this.lastTime;
-    n > 0 && (this.velocityX = e / n, this.velocityY = s / n), this.dispatch(e, s, !0), this.lastX = t.clientX, this.lastY = t.clientY, this.lastTime = i;
+    const e = performance.now(), i = t.clientX - this.lastX, s = t.clientY - this.lastY, n = e - this.lastTime;
+    if (n > 0) {
+      const o = i / n, r = s / n;
+      this.velocityX = this.velocityX * 0.6 + o * 0.4, this.velocityY = this.velocityY * 0.6 + r * 0.4;
+    }
+    this.dispatch(i, s, !0), this.lastX = t.clientX, this.lastY = t.clientY, this.lastTime = e;
   }
   onPointerUp(t) {
     if (!this.isDragging || !this.target) return;
     this.target.releasePointerCapture(t.pointerId), this.target.removeEventListener("pointermove", this.pointerMoveListener), this.target.removeEventListener("pointerup", this.pointerUpListener), this.isDragging = !1;
-    const i = Math.abs(t.clientX - this.startX), e = Math.abs(t.clientY - this.startY), s = performance.now() - this.startTime;
-    if (i < 10 && e < 10 && s < 200) {
+    const e = performance.now(), i = Math.abs(t.clientX - this.startX), s = Math.abs(t.clientY - this.startY), n = e - this.startTime;
+    if (e - this.lastTime > 50) {
       this.stopMovement();
       return;
     }
-    this.animationId = requestAnimationFrame(this.physicsLoop);
+    if (i < 10 && s < 10 && n < 200) {
+      this.stopMovement();
+      return;
+    }
+    this.lastTime = performance.now(), this.animationId = requestAnimationFrame(this.physicsLoop);
   }
   destroy() {
     this.target && (this.target.removeEventListener("pointerdown", this.pointerDownListener), this.target.removeEventListener("pointermove", this.pointerMoveListener), this.target.removeEventListener("pointerup", this.pointerUpListener), this.target = null), this.stopMovement();
   }
 }
 export {
-  o as MissingSwipePhysicsEmitter
+  a as MissingSwipePhysicsEmitter
 };
 //# sourceMappingURL=index.js.map
