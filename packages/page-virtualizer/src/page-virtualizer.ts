@@ -121,13 +121,21 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
       overflow: hidden;
       --transform-transition-time: 0.3s;
     }
+    :host([swipe-scroll]),
+    :host([swipe-scroll]) .container,
+    :host([swipe-scroll]) ::slotted(*) {
+      touch-action: none;
+      overscroll-behavior: none;
+      -webkit-user-drag: none;
+      user-select: none;
+    }
     .container {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: fit-content;
-      transform: translateY(var(--translateY));
+      transform: translate3D(0, var(--translateY), 0);
       will-change: transform;
       min-height: 150vh;
       /* Add this to force the browser to keep the buffer pages in GPU memory */
