@@ -44,6 +44,7 @@ export declare class MissingPageVirtualizer extends virtualiserKeyboardBase {
     private swipePhysics?;
     private slotChangedResolve?;
     private jumpSkipping;
+    private accumulatedDelta;
     static styles: import('lit').CSSResult;
     render(): import('lit-html').TemplateResult<1>;
     initialize(): void;
@@ -95,7 +96,7 @@ export declare class MissingPageVirtualizer extends virtualiserKeyboardBase {
      * updated heights after render and then correctly move to the required
      * scrollTop. Little computationally expensive as Lit has to
      * render twice, but if it is needed say to jump across
-     * a 1000 pages on a high frequency like a page up or page down, this
+     * a 1000 pages like a page up or page down, this
      * function will come in handy.
      *
      * Make sure ` this.updateMemoryWithNewHeights();

@@ -108,6 +108,7 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
   private swipePhysics?: MissingSwipePhysicsEmitter;
   private slotChangedResolve?: (value: void) => void;
   private jumpSkipping = false;
+  private accumulatedDelta = 0;
 
   static override styles = css`
     * {
@@ -174,15 +175,23 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
                     // 3. Wait for all active CSS Transitions/Animations to finish
                     await this.tillStable([this.container, ...assignedNodes]);
                     this.localScrollY = this.getComputedLocalScrollY();
+                    this.localScrollY += this.accumulatedDelta;
+                    this.container.style.transform = `translateY(${-this.localScrollY}px)`;
+                    this.translateY = `${-this.localScrollY}px`;
                     this.updateMemoryWithNewHeights();
                     this.globalScrollY =
                       (this.startIndex > 0
                         ? this.ft!.getCumulativeHeight(this.startIndex - 1)
                         : 0) + this.localScrollY;
+                    this.containerHeight = parseFloat(
+                      this.containerComputedStyle.height,
+                    );
                     this.fakeScrollbar?.setToScrollTop(this.globalScrollY);
                     this.pauseUpdate = false;
-                    this.style.opacity = "1";
                     this.dispatchEvent(new CustomEvent("scroll-stopped"));
+                    this.listItems.forEach(
+                      (listItem) => (listItem.style.opacity = "1"),
+                    );
                     if (this.scrollTimeout) {
                       clearTimeout(this.scrollTimeout);
                     }
@@ -243,7 +252,7 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
         this.scrollTop = 0;
       });
       this.addEventListener("wheel", (e) => {
-        this.slowScrollBy(e.deltaY);
+        this.slowScrollBy(e.deltaY, true);
       });
       this.setupKeyboardInteractions();
     });
@@ -317,6 +326,7 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
       const calculatedTranslateY = -(scrollTop - cumulativePreviousHeight);
 
       this.translateY = `${calculatedTranslateY}px`;
+      this.localScrollY = -calculatedTranslateY;
 
       this.startIndex = firstIndex;
       if (dispatchEvent) {
@@ -378,13 +388,20 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
   }
   // TODO: See if this function can be eliminated in future updates
   slowScrollBy(delta = 0, byPassTransitions = false) {
-    if (this.pauseUpdate) return;
+    if (this.pauseUpdate) {
+      this.accumulatedDelta += delta;
+      return;
+    } else {
+      this.accumulatedDelta = 0;
+    }
     if (this.scrollTimeout) {
       clearTimeout(this.scrollTimeout);
     }
     this.updateMemoryWithNewHeights();
-    this.updateContainerHeight();
-    this.localScrollY = this.getComputedLocalScrollY();
+    if (!this.scrolling) {
+      this.updateContainerHeight();
+      this.localScrollY = this.getComputedLocalScrollY();
+    }
     this.direction = delta > 0 ? "DOWN" : delta < 0 ? "UP" : "STABLE";
     this.dispatchEvent(new CustomEvent("scrolling"));
     this.scrolling = true;
@@ -410,15 +427,16 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
       const extraOffset = offsetFromFixedBlock - fixedBlockHeight;
       const newIndex = this.startIndex + 1;
       const newTransformY = fixedBlockHeight + extraOffset;
-      this.translateY = `${-newTransformY}px`;
-      this.startIndex = newIndex;
       // we need to hide the opacity temporarily so as to avoid FOUC.
       // it is restored later in the slot change update if check
       if (this.noOpacityChange) {
         this.noOpacityChange = false;
       } else {
-        this.style.opacity = "0";
+        this.listItems.forEach((listItem) => (listItem.style.opacity = "0"));
       }
+      this.translateY = `${-newTransformY}px`;
+      this.startIndex = newIndex;
+
       this.dispatchEvent(
         new CustomEvent("load", {
           detail: {
@@ -461,16 +479,17 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
         reverseScrollY + Math.abs(delta) - heightOfLastPage;
       const extraOffset = offsetFromFixedBlock - fixedBlockHeight;
       const transformYFromBottom = fixedBlockHeight + extraOffset;
-      this.translateY = `calc(-100% + ${transformYFromBottom}px)`;
-      const newIndex = this.startIndex - 1;
-      this.startIndex = newIndex;
       // we need to hide the opacity temporarily so as to avoid FOUC.
       // it is restored later in the slot change update if check
       if (this.noOpacityChange) {
         this.noOpacityChange = false;
       } else {
-        this.style.opacity = "0";
+        this.listItems.forEach((listItem) => (listItem.style.opacity = "0"));
       }
+      this.translateY = `calc(-100% + ${transformYFromBottom}px)`;
+      const newIndex = this.startIndex - 1;
+      this.startIndex = newIndex;
+
       this.dispatchEvent(
         new CustomEvent("load", {
           detail: {
@@ -748,25 +767,21 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
       case "arrowup":
       case "arrowdown":
         {
-          this.scrolling = true;
           this.repeatedScrollByPixels(increment);
         }
         break;
       case "pagedown":
       case "pageup": {
-        this.scrolling = true;
-        requestAnimationFrame(async () => {
-          if (this.pauseUpdate) return;
-          this.updateMemoryWithNewHeights();
-          let currentGlobalScrollY = this.getCurrentGlobalScrollYFromView();
-          let requiredGlobalScrollY = currentGlobalScrollY + increment;
-          // setting it within limits. so that pageup and pagedown still happen
-          requiredGlobalScrollY = Math.min(
-            Math.max(0, requiredGlobalScrollY),
-            this.virtualScrollHeight - this.clientHeight,
-          );
-          await this.accurateJumpTo(requiredGlobalScrollY);
-        });
+        if (this.pauseUpdate) return;
+        this.updateMemoryWithNewHeights();
+        let currentGlobalScrollY = this.getCurrentGlobalScrollYFromView();
+        let requiredGlobalScrollY = currentGlobalScrollY + increment;
+        // setting it within limits. so that pageup and pagedown still happen
+        requiredGlobalScrollY = Math.min(
+          Math.max(0, requiredGlobalScrollY),
+          this.virtualScrollHeight - this.clientHeight,
+        );
+        await this.accurateJumpTo(requiredGlobalScrollY);
       }
     }
   }
@@ -891,7 +906,6 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
       e.preventDefault();
       return;
     }
-    this.scrolling = true;
 
     const swipeEvent = e as MissingSwipePhysicsEvent;
     const scrollDelta = -swipeEvent.detail.deltaY * this.swipeDeltaMultiplier;
@@ -904,7 +918,7 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
    * updated heights after render and then correctly move to the required
    * scrollTop. Little computationally expensive as Lit has to
    * render twice, but if it is needed say to jump across
-   * a 1000 pages on a high frequency like a page up or page down, this
+   * a 1000 pages like a page up or page down, this
    * function will come in handy.
    *
    * Make sure ` this.updateMemoryWithNewHeights();
@@ -913,65 +927,74 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
    * @param scrollTop
    */
   public async accurateJumpTo(scrollTop: number) {
-    requestAnimationFrame(async () => {
-      if (!this.ft) return;
-      this.scrolling = true;
-      if (this.jumpSkipping) return;
-      const currentGlobalScrollY = this.getCurrentGlobalScrollYFromView();
-      const increment = scrollTop - currentGlobalScrollY;
-      this.containerHeight = parseFloat(this.containerComputedStyle.height);
-      let localScrollY = this.getComputedLocalScrollY();
-      if (
-        localScrollY + increment < 0 ||
-        localScrollY + increment > this.containerHeight - this.clientHeight
-      ) {
-        this.jumpSkipping = true;
-        const previousStartIndex = this.startIndex;
-        this.style.opacity = "0";
-        // the first render
-        this.stableJumpTo(this.globalScrollY + increment);
-        await this.updateComplete;
+    if (!this.ft) return;
+    if (this.jumpSkipping) return;
+    this.updateMemoryWithNewHeights();
+    if (!this.scrolling) {
+      this.updateContainerHeight();
+      this.localScrollY = this.getComputedLocalScrollY();
+    }
+    this.scrolling = true;
+    const currentGlobalScrollY = this.getCurrentGlobalScrollYFromView();
+    const increment = scrollTop - currentGlobalScrollY;
+    const previousLocalScrollY = this.localScrollY;
+    if (this.scrollTimeout) {
+      clearTimeout(this.scrollTimeout);
+    }
+    this.scrollTimeout = setTimeout(() => {
+      this.scrolling = false;
+      this.dispatchEvent(new CustomEvent("scroll-stopped"));
+    }, this.scrollWaitTime);
+    this.dispatchEvent(new CustomEvent("scrolling"));
+    this.classList.add("by-pass");
+    if (
+      this.localScrollY + increment < 0 ||
+      this.localScrollY + increment > this.containerHeight - this.clientHeight
+    ) {
+      this.jumpSkipping = true;
+      const previousStartIndex = this.startIndex;
+      this.listItems.forEach((listItem) => (listItem.style.opacity = "0"));
+      // the first render
+      this.stableJumpTo(this.globalScrollY + increment);
+      await this.updateComplete;
+      await this.waitForSlotChangedEvent();
+      await this.allStable();
+      await Promise.all(this.listItems.map((qE) => qE.isReady));
+      this.updateMemoryWithNewHeights();
+      // this time the updated new heights of where we landed is absorbed
+      // into memory. now using that updated memory, jump to our
+      // actual view.
+      const finalRenderPreviousStartIndexCumulativePreviousIndexHeight =
+        previousStartIndex !== 0
+          ? this.ft!.getCumulativeHeight(previousStartIndex - 1)
+          : 0;
+      const finalGlobalScrollYAfterRender =
+        finalRenderPreviousStartIndexCumulativePreviousIndexHeight +
+        previousLocalScrollY +
+        increment;
+      const newStartIndex = this.ft.findIndexOfPixel(
+        finalGlobalScrollYAfterRender,
+      );
+      this.stableJumpTo(finalGlobalScrollYAfterRender);
+      await this.updateComplete;
+      // on the 2nd render, the new index may or maynot be
+      // the same index as the startindex.
+      if (newStartIndex !== this.startIndex) {
         await this.waitForSlotChangedEvent();
-        await this.allStable();
-        await Promise.all(this.listItems.map((qE) => qE.isReady));
-        this.updateMemoryWithNewHeights();
-        // this time the updated new heights of where we landed is absorbed
-        // into memory. now using that updated memory, jump to our
-        // actual view.
-        const finalRenderPreviousStartIndexCumulativePreviousIndexHeight =
-          previousStartIndex !== 0
-            ? this.ft!.getCumulativeHeight(previousStartIndex - 1)
-            : 0;
-        const finalGlobalScrollYAfterRender =
-          finalRenderPreviousStartIndexCumulativePreviousIndexHeight +
-          localScrollY +
-          increment;
-        const newStartIndex = this.ft.findIndexOfPixel(
-          finalGlobalScrollYAfterRender,
-        );
-        this.stableJumpTo(finalGlobalScrollYAfterRender);
-        await this.updateComplete;
-        // on the 2nd render, the new index may or maynot be
-        // the same index as the startindex.
-        if (newStartIndex !== this.startIndex) {
-          await this.waitForSlotChangedEvent();
-        }
-        await this.allStable();
-        await Promise.all(this.listItems.map((qE) => qE.isReady));
-        this.style.opacity = "1";
-        this.dispatchEvent(new CustomEvent("scrolling"));
-        this.jumpSkipping = false;
-        return;
       }
-      localScrollY += increment;
-      this.translateY = `${-localScrollY}px`;
-      this.globalScrollY =
-        (this.startIndex > 0
-          ? this.ft!.getCumulativeHeight(this.startIndex - 1)
-          : 0) + localScrollY;
-      this.fakeScrollbar?.setToScrollTop(this.globalScrollY);
-      this.dispatchEvent(new CustomEvent("scrolling"));
-    });
+      await this.allStable();
+      await Promise.all(this.listItems.map((qE) => qE.isReady));
+      this.listItems.forEach((listItem) => (listItem.style.opacity = "1"));
+      this.jumpSkipping = false;
+      return;
+    }
+    this.localScrollY += increment;
+    this.translateY = `${-this.localScrollY}px`;
+    this.globalScrollY =
+      (this.startIndex > 0
+        ? this.ft!.getCumulativeHeight(this.startIndex - 1)
+        : 0) + this.localScrollY;
+    this.fakeScrollbar?.setToScrollTop(this.globalScrollY);
   }
   private createSlotChangedPromise() {
     return new Promise((resolve) => {
