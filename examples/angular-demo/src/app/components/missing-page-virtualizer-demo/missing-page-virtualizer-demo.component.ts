@@ -83,20 +83,18 @@ export class MissingPageVirtualizerDemo implements AfterViewInit {
   }
 
   updatePageData(isScrolling: boolean) {
-    requestAnimationFrame(() => {
-      if (this.scroller) {
-        const currentScrollTop = this.scroller.getCurrentScrollTop();
-        const startPageIndex = this.scroller.getPageIndexForScrollTop(currentScrollTop);
-        const endPageIndex = this.scroller.getPageIndexForScrollTop(
-          currentScrollTop + this.scroller.clientHeight,
-        );
-        if (typeof startPageIndex === 'number' && typeof endPageIndex === 'number') {
-          this.startItem = startPageIndex * this.bucketSize + 1;
-          this.endItem = endPageIndex * this.bucketSize + this.bucketSize;
-        }
+    if (this.scroller) {
+      const currentScrollTop = this.scroller.getCurrentScrollTop();
+      const startPageIndex = this.scroller.getPageIndexForScrollTop(currentScrollTop);
+      const endPageIndex = this.scroller.getPageIndexForScrollTop(
+        currentScrollTop + this.scroller.clientHeight,
+      );
+      if (typeof startPageIndex === 'number' && typeof endPageIndex === 'number') {
+        this.startItem = startPageIndex * this.bucketSize + 1;
+        this.endItem = endPageIndex * this.bucketSize + this.bucketSize;
       }
-      this.isScrolling = isScrolling;
-    });
+    }
+    this.isScrolling = isScrolling;
   }
 
   loadMore() {
