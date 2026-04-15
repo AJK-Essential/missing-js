@@ -1,9 +1,26 @@
-<header>
+<header style="padding: 24px">
   <div class="logo-space">
     <!-- <img src="/missing-js-logo.svg" /> -->
-    <svg viewBox="0 0 410 120">
+    <svg viewBox="0 0 410 120" style="fill: #c7c7c7; height: 32px">
       <use xlink:href="./missing-js-logo.svg"></use>
     </svg>
   </div>
+  <nav class="header-tab">
+    <ol class="nav-ol">
+      <li>
+        <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }"
+          >Current Page Virtualizer</a
+        >
+      </li>
+      <li>
+        <a
+          routerLink="/experimental"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: true }"
+          >Experimental</a
+        >
+      </li>
+    </ol>
+  </nav>
 </header>
-<missing-page-virtualizer-demo></missing-page-virtualizer-demo>
+<router-outlet style="display: none"></router-outlet>

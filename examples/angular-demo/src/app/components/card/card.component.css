@@ -1,8 +1,8 @@
 :host {
   display: block;
   width: 50%;
-  border-radius: 4px;
-  background-color: rgb(255 255 255 / 2%);
+  border-radius: 24px;
+  background-color: rgb(2 12 19);
   padding: 1rem 1rem;
   transition: all 0.1s ease;
 }
@@ -36,13 +36,13 @@
   color: rgb(0 0 0 / 85%);
 }
 .body {
-  font-size: 20px;
+  font-size: 17px;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   color: rgb(244 255 251 / 42%);
   padding: 0.5rem 0;
   height: fit-content;
   word-break: break-word;
-  font-weight: 400;
+  font-weight: 500;
   text-shadow: 0px 1px rgba(0, 0, 0, 0.16);
 }
 :host(:hover) .icon,
