@@ -112,5 +112,6 @@ export declare class MissingPageVirtualizerTwo extends virtualiserKeyboardBase {
     private waitForSlotChangedEvent;
     private getCurrentGlobalScrollYFromView;
     setView(): void;
+    executeSetView(): void;
 }
 //# sourceMappingURL=page-virtualizer-two.d.ts.map

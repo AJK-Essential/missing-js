@@ -249,7 +249,6 @@ export class MissingPageVirtualizerTwo extends virtualiserKeyboardBase {
     if (changedProperties.has("swipeScroll")) {
       if (this.swipeScroll) {
         this.swipePhysics = new MissingSwipePhysicsEmitter();
-        this.swipePhysics.friction = 0.92;
         this.swipePhysics.emitFor(this);
       } else {
         this.swipePhysics?.destroy();
@@ -667,7 +666,7 @@ export class MissingPageVirtualizerTwo extends virtualiserKeyboardBase {
       case "arrowup":
       case "arrowdown":
         {
-          this.slowScrollBy(increment, true);
+          this.slowScrollBy(increment);
         }
         break;
       case "pagedown":
@@ -797,11 +796,12 @@ export class MissingPageVirtualizerTwo extends virtualiserKeyboardBase {
       e.preventDefault();
       return;
     }
-
-    const swipeEvent = e as MissingSwipePhysicsEvent;
-    const scrollDelta = -swipeEvent.detail.deltaY * this.swipeDeltaMultiplier;
-    this.slowScrollBy(scrollDelta, true);
-    this.dispatchEvent(new CustomEvent("scrolling"));
+    requestAnimationFrame(() => {
+      const swipeEvent = e as MissingSwipePhysicsEvent;
+      const scrollDelta = -swipeEvent.detail.deltaY * this.swipeDeltaMultiplier;
+      this.slowScrollBy(scrollDelta, true);
+      this.dispatchEvent(new CustomEvent("scrolling"));
+    });
   }
   /**
    * This function is for highly accurate jumps to a particular
@@ -904,25 +904,33 @@ export class MissingPageVirtualizerTwo extends virtualiserKeyboardBase {
     return globalScrollY;
   }
   public setView() {
-    if (this.pendingViewTranslate) {
-      this.localScrollY = -parseFloat(this.pendingViewTranslate);
-      if (this.accumulatedDelta) {
-        this.localScrollY += this.accumulatedDelta;
-        this.accumulatedDelta = 0;
-      }
-      this.container.style.setProperty(
-        `--translateY`,
-        `${-this.localScrollY}px`,
-      );
-      this.translateY = `${-this.localScrollY}px`;
-      this.pendingViewTranslate = undefined;
-      const pageTop =
-        this.startIndex === 0
-          ? 0
-          : this.ft!.getCumulativeHeight(this.startIndex - 1);
-      this.globalScrollY = pageTop + this.localScrollY;
-      this.fakeScrollbar?.setToScrollTop(this.globalScrollY);
+    if (!this.pendingViewTranslate) {
+      this.pauseUpdate = false;
+      return;
     }
+    this.executeSetView();
+  }
+  executeSetView() {
+    this.container.style.opacity = "0";
+    this.localScrollY = -parseFloat(this.pendingViewTranslate!);
+    if (this.accumulatedDelta) {
+      this.localScrollY += this.accumulatedDelta;
+      this.accumulatedDelta = 0;
+    }
+    this.container.style.setProperty(`--translateY`, `${-this.localScrollY}px`);
+    this.translateY = `${-this.localScrollY}px`;
+    this.pendingViewTranslate = undefined;
+    const pageTop =
+      this.startIndex === 0
+        ? 0
+        : this.ft!.getCumulativeHeight(this.startIndex - 1);
+    this.globalScrollY = pageTop + this.localScrollY;
+    this.fakeScrollbar?.setToScrollTop(this.globalScrollY);
     this.pauseUpdate = false;
+    setTimeout(() => {
+      requestAnimationFrame(() => {
+        this.container.style.opacity = "1";
+      });
+    });
   }
 }
