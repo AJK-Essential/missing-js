@@ -796,12 +796,10 @@ export class MissingPageVirtualizerTwo extends virtualiserKeyboardBase {
       e.preventDefault();
       return;
     }
-    requestAnimationFrame(() => {
-      const swipeEvent = e as MissingSwipePhysicsEvent;
-      const scrollDelta = -swipeEvent.detail.deltaY * this.swipeDeltaMultiplier;
-      this.slowScrollBy(scrollDelta, true);
-      this.dispatchEvent(new CustomEvent("scrolling"));
-    });
+    const swipeEvent = e as MissingSwipePhysicsEvent;
+    const scrollDelta = -swipeEvent.detail.deltaY * this.swipeDeltaMultiplier;
+    this.slowScrollBy(scrollDelta, true);
+    this.dispatchEvent(new CustomEvent("scrolling"));
   }
   /**
    * This function is for highly accurate jumps to a particular
