@@ -6,6 +6,10 @@ export interface SwipePhysicsDetail {
     velocityY: number;
     isDragging: boolean;
 }
+/**
+ * High-Performance Swipe Emitter with Coalesced Event Handling
+ * Optimized for 120Hz mobile screens and Lit/Angular integration.
+ */
 export declare class MissingSwipePhysicsEmitter {
     friction: number;
     private velocityX;
@@ -19,6 +23,9 @@ export declare class MissingSwipePhysicsEmitter {
     private startTime;
     private animationId;
     private target?;
+    private pendingDeltaX;
+    private pendingDeltaY;
+    private moveRequested;
     private pointerMoveListener;
     private pointerDownListener;
     private pointerUpListener;
