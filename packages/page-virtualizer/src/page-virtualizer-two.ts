@@ -113,7 +113,7 @@ export class MissingPageVirtualizerTwo extends virtualiserKeyboardBase {
   private jumpSkipping = false;
   private accumulatedDelta = 0;
   private pendingViewTranslate?: string;
-  private dispatchEvenIfSameStartIndex = false;
+  private recoveryTimeout?: number;
 
   static override styles = css`
     * {
@@ -174,40 +174,6 @@ export class MissingPageVirtualizerTwo extends virtualiserKeyboardBase {
                     this.slotChangedResolve();
                     this.slotChangedResolve = undefined;
                   }
-                  // TODO: See if this below function can also be removed.
-                  if (this.pauseUpdate) {
-                    this.classList.add("by-pass");
-                    // const slot = e.currentTarget as HTMLSlotElement;
-                    const assignedNodes = this.innerSlot.assignedElements({
-                      flatten: true,
-                    });
-                    // 2. Wait for the "Browser Paint" (ensure elements are rendered)
-                    await this.tillPainted();
-
-                    // 3. Wait for all active CSS Transitions/Animations to finish
-                    await this.tillStable([this.container, ...assignedNodes]);
-                    this.updateMemoryWithNewHeights();
-                    this.localScrollY = -parseFloat(this.translateY);
-                    if (this.accumulatedDelta) {
-                      this.localScrollY += this.accumulatedDelta;
-                      this.accumulatedDelta = 0;
-                    }
-                    this.container.style.transform = `translateY(${-this.localScrollY}px)`;
-                    this.translateY = `${-this.localScrollY}px`;
-                    this.pauseUpdate = false;
-                    const pageTop =
-                      this.startIndex === 0
-                        ? 0
-                        : this.ft!.getCumulativeHeight(this.startIndex - 1);
-                    this.globalScrollY = pageTop + this.localScrollY;
-                    this.fakeScrollbar?.setToScrollTop(this.globalScrollY);
-                    if (this.scrollTimeout) {
-                      clearTimeout(this.scrollTimeout);
-                    }
-                    this.scrollTimeout = setTimeout(() => {
-                      this.scrolling = false;
-                    }, this.scrollWaitTime);
-                  }
                 }}"
               ></slot>
             </div>
@@ -260,7 +226,6 @@ export class MissingPageVirtualizerTwo extends virtualiserKeyboardBase {
           },
         }),
       );
-      this.dispatchNextPreviousLoadEvent();
       this.addEventListener("scroll", () => {
         this.scrollTop = 0;
       });
@@ -284,26 +249,12 @@ export class MissingPageVirtualizerTwo extends virtualiserKeyboardBase {
     if (changedProperties.has("swipeScroll")) {
       if (this.swipeScroll) {
         this.swipePhysics = new MissingSwipePhysicsEmitter();
+        this.swipePhysics.friction = 0.92;
         this.swipePhysics.emitFor(this);
       } else {
         this.swipePhysics?.destroy();
       }
     }
-    if (changedProperties.has("startIndex") && this.initialized) {
-      this.dispatchNextPreviousLoadEvent();
-    }
-  }
-
-  private dispatchNextPreviousLoadEvent() {
-    let indices: number[] = [];
-    if (this.startIndex === 0) {
-      indices = [this.numOfItems];
-    } else {
-      indices = [this.startIndex - 1, this.startIndex + this.numOfItems];
-    }
-    this.dispatchEvent(
-      new CustomEvent("load-previous-next", { detail: { indices } }),
-    );
   }
 
   override disconnectedCallback(): void {
@@ -415,10 +366,6 @@ export class MissingPageVirtualizerTwo extends virtualiserKeyboardBase {
     }
   }
   slowScrollBy(delta = 0, byPassTransitions = false) {
-    if (this.pauseUpdate) {
-      this.accumulatedDelta += delta;
-      return;
-    }
     if (this.scrollTimeout) {
       clearTimeout(this.scrollTimeout);
     }
@@ -429,7 +376,6 @@ export class MissingPageVirtualizerTwo extends virtualiserKeyboardBase {
 
     this.dispatchEvent(new CustomEvent("scrolling"));
     this.scrolling = true;
-
     if (byPassTransitions) {
       this.classList.add("by-pass");
     } else {
@@ -438,15 +384,19 @@ export class MissingPageVirtualizerTwo extends virtualiserKeyboardBase {
     this.localScrollY =
       this.translateY !== "" ? -parseFloat(this.translateY) : 0;
     this.localScrollY += delta;
-    if (this.accumulatedDelta) {
-      this.localScrollY += this.accumulatedDelta;
-      this.accumulatedDelta = 0;
-    }
     const pageTop =
       this.startIndex === 0
         ? 0
         : this.ft!.getCumulativeHeight(this.startIndex - 1);
     this.globalScrollY = pageTop + this.localScrollY;
+    // Correction to not pull up beyond known limits
+    const roundedGlobalScrollY = Math.min(
+      Math.max(0, this.globalScrollY),
+      this.virtualScrollHeight - this.clientHeight,
+    );
+    const excessGlobalDelta = roundedGlobalScrollY - this.globalScrollY;
+    this.localScrollY -= excessGlobalDelta;
+    this.globalScrollY = roundedGlobalScrollY;
     this.fakeScrollbar?.setToScrollTop(this.globalScrollY);
     const firstIndex = this.ft!.findIndexOfPixel(this.globalScrollY);
     const cumulativePreviousHeight =
@@ -454,10 +404,34 @@ export class MissingPageVirtualizerTwo extends virtualiserKeyboardBase {
     const calculatedTranslateY = -(
       this.globalScrollY - cumulativePreviousHeight
     );
+    if (this.pauseUpdate) {
+      this.accumulatedDelta += delta;
+      this.container.style.setProperty(
+        `--translateY`,
+        `${-this.localScrollY}px`,
+      );
+      return;
+    }
     if (firstIndex !== this.startIndex) {
+      this.container.style.setProperty(
+        "--translateY",
+        `${-this.localScrollY}px`,
+      );
       this.pauseUpdate = true;
+      this.classList.add("by-pass");
       this.startIndex = firstIndex;
       this.pendingViewTranslate = `${calculatedTranslateY}px`;
+
+      if (this.recoveryTimeout) {
+        clearTimeout(this.recoveryTimeout);
+      }
+      this.recoveryTimeout = setTimeout(() => {
+        if (this.pauseUpdate) {
+          console.warn("Recovery: Angular took > 500ms. Forcing setView.");
+          this.setView();
+        }
+      }, 500); // 500ms is a safe "user frustration" threshold
+
       this.dispatchEvent(
         new CustomEvent("load", {
           detail: {
@@ -693,21 +667,12 @@ export class MissingPageVirtualizerTwo extends virtualiserKeyboardBase {
       case "arrowup":
       case "arrowdown":
         {
-          this.slowScrollBy(increment);
+          this.slowScrollBy(increment, true);
         }
         break;
       case "pagedown":
       case "pageup": {
-        if (this.pauseUpdate) return;
-        this.updateMemoryWithNewHeights();
-        let currentGlobalScrollY = this.getCurrentGlobalScrollYFromView();
-        let requiredGlobalScrollY = currentGlobalScrollY + increment;
-        // setting it within limits. so that pageup and pagedown still happen
-        requiredGlobalScrollY = Math.min(
-          Math.max(0, requiredGlobalScrollY),
-          this.virtualScrollHeight - this.clientHeight,
-        );
-        await this.accurateJumpTo(requiredGlobalScrollY);
+        this.slowScrollBy(increment, true);
       }
     }
   }
@@ -945,7 +910,10 @@ export class MissingPageVirtualizerTwo extends virtualiserKeyboardBase {
         this.localScrollY += this.accumulatedDelta;
         this.accumulatedDelta = 0;
       }
-      this.container.style.transform = `translateY(${-this.localScrollY}px)`;
+      this.container.style.setProperty(
+        `--translateY`,
+        `${-this.localScrollY}px`,
+      );
       this.translateY = `${-this.localScrollY}px`;
       this.pendingViewTranslate = undefined;
       const pageTop =
@@ -955,5 +923,6 @@ export class MissingPageVirtualizerTwo extends virtualiserKeyboardBase {
       this.globalScrollY = pageTop + this.localScrollY;
       this.fakeScrollbar?.setToScrollTop(this.globalScrollY);
     }
+    this.pauseUpdate = false;
   }
 }

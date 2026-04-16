@@ -47,12 +47,11 @@ export declare class MissingPageVirtualizerTwo extends virtualiserKeyboardBase {
     private jumpSkipping;
     private accumulatedDelta;
     private pendingViewTranslate?;
-    private dispatchEvenIfSameStartIndex;
+    private recoveryTimeout?;
     static styles: import('lit').CSSResult;
     render(): import('lit-html').TemplateResult<1>;
     initialize(): void;
     updated(changedProperties: Map<string, unknown>): void;
-    private dispatchNextPreviousLoadEvent;
     disconnectedCallback(): void;
     protected scrollByAmt(amt: number, byPassTransitions?: boolean): void;
     private onPowerScroll;

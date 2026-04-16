@@ -75,28 +75,31 @@ export class MissingPageVirtualizerDemo2 implements AfterViewInit {
   refreshRenderedArrays(e: Event) {
     const scrollerEvent = e as LoadEventTwo;
     const { indices } = scrollerEvent.detail;
-    const tempArray = [];
+    const tempArray1 = [];
     this.startIndex = indices[0];
     for (let i = indices[0]; i <= indices[1]; ++i) {
-      tempArray.push({ pageIndex: i, data: i <= this.items.length - 1 ? this.items[i] : [] });
+      tempArray1.push({ pageIndex: i, data: i <= this.items.length - 1 ? this.items[i] : [] });
     }
-    this.renderingArray = tempArray;
-    requestAnimationFrame(() => {
-      this.scroller?.setView();
-    });
-  }
-  loadPreviousNextPages(e: Event) {
-    const scrollerEvent = e as LoadEventTwo;
-    const { indices } = scrollerEvent.detail;
-    const tempArray = [];
-    for (let i = 0; i < indices.length; ++i) {
-      const pageIndex = indices[i];
-      tempArray.push({
+    let nextPreviousSlot: number[] = [];
+    if (this.startIndex === 0) {
+      nextPreviousSlot[0] = this.startIndex + this.scroller!.numOfItems;
+    } else {
+      nextPreviousSlot = [this.startIndex - 1, this.startIndex + this.scroller!.numOfItems];
+    }
+
+    const tempArray2 = [];
+    for (let i = 0; i < nextPreviousSlot.length; ++i) {
+      const pageIndex = nextPreviousSlot[i];
+      tempArray2.push({
         pageIndex,
         data: pageIndex <= this.items.length - 1 ? this.items[pageIndex] : [],
       });
     }
-    this.previousNextArray = tempArray;
+    this.previousNextArray = tempArray2;
+    this.renderingArray = tempArray1;
+    requestAnimationFrame(() => {
+      this.scroller?.setView();
+    });
   }
 
   updatePageData(isScrolling: boolean) {
