@@ -8,12 +8,8 @@ export interface SwipePhysicsDetail {
   isDragging: boolean;
 }
 
-/**
- * High-Performance Swipe Emitter with Coalesced Event Handling
- * Optimized for 120Hz mobile screens and Lit/Angular integration.
- */
 export class MissingSwipePhysicsEmitter {
-  public friction: number = 0.95;
+  public friction: number = 0.88;
 
   private velocityX: number = 0;
   private velocityY: number = 0;
@@ -28,12 +24,8 @@ export class MissingSwipePhysicsEmitter {
   private startTime: number = 0;
 
   private animationId: number | null = null;
-  private target?: HTMLElement | null;
 
-  // Throttling State to prevent "shiver"
-  private pendingDeltaX: number = 0;
-  private pendingDeltaY: number = 0;
-  private moveRequested: boolean = false;
+  private target?: HTMLElement | null;
 
   private pointerMoveListener = this.onPointerMove.bind(this);
   private pointerDownListener = this.onPointerDown.bind(this);
@@ -44,7 +36,6 @@ export class MissingSwipePhysicsEmitter {
     // 'pan-y' or 'none' depending on your vertical scroll needs.
     // 'none' is safest for full custom control.
     this.target.style.touchAction = "none";
-    this.target.style.userSelect = "none";
     this.target.addEventListener("pointerdown", this.pointerDownListener);
   }
 
@@ -55,29 +46,23 @@ export class MissingSwipePhysicsEmitter {
     }
     this.velocityX = 0;
     this.velocityY = 0;
-    this.pendingDeltaX = 0;
-    this.pendingDeltaY = 0;
   }
 
   private dispatch(deltaX: number, deltaY: number, isDragging: boolean): void {
     if (!this.target) return;
-
-    // Rounding to 2 decimal places prevents sub-pixel rendering shimmer
     const detail: SwipePhysicsDetail = {
-      deltaX: Math.round(deltaX * 100) / 100,
-      deltaY: Math.round(deltaY * 100) / 100,
+      deltaX,
+      deltaY,
       velocityX: this.velocityX,
       velocityY: this.velocityY,
       isDragging,
     };
-
-    this.target.dispatchEvent(
-      new CustomEvent("swipe-detected", {
-        detail,
-        bubbles: true,
-        composed: true,
-      }),
-    );
+    const event: MissingSwipePhysicsEvent = new CustomEvent("swipe-detected", {
+      detail,
+      bubbles: true,
+      composed: true,
+    });
+    this.target.dispatchEvent(event);
   }
 
   private onPointerDown(e: PointerEvent) {
@@ -103,76 +88,53 @@ export class MissingSwipePhysicsEmitter {
   private onPointerMove(e: PointerEvent) {
     if (!this.isDragging) return;
 
-    // 1. Process all high-res touch points (fixes 120Hz/240Hz jitter)
-    const events = (e as any).getCoalescedEvents
-      ? (e as any).getCoalescedEvents()
-      : [e];
+    const now = performance.now();
+    const deltaX = e.clientX - this.lastX;
+    const deltaY = e.clientY - this.lastY;
+    const deltaTime = now - this.lastTime;
 
-    for (const e of events) {
-      const now = performance.now();
-      const deltaX = e.clientX - this.lastX;
-      const deltaY = e.clientY - this.lastY;
-      const deltaTime = now - this.lastTime;
+    if (deltaTime > 0) {
+      const instantaneousVX = deltaX / deltaTime;
+      const instantaneousVY = deltaY / deltaTime;
 
-      if (deltaTime > 0) {
-        const instantaneousVX = deltaX / deltaTime;
-        const instantaneousVY = deltaY / deltaTime;
-
-        // WEIGHTED SMOOTHING: Prevents a single jittery frame at the end
-        // from killing the momentum (the 'Android Stickiness' fix).
-        this.velocityX = this.velocityX * 0.7 + instantaneousVX * 0.3;
-        this.velocityY = this.velocityY * 0.7 + instantaneousVY * 0.3;
-      }
-
-      this.pendingDeltaX += deltaX;
-      this.pendingDeltaY += deltaY;
-
-      this.lastX = e.clientX;
-      this.lastY = e.clientY;
-      this.lastTime = now;
+      // WEIGHTED SMOOTHING: Prevents a single jittery frame at the end
+      // from killing the momentum (the 'Android Stickiness' fix).
+      this.velocityX = this.velocityX * 0.6 + instantaneousVX * 0.4;
+      this.velocityY = this.velocityY * 0.6 + instantaneousVY * 0.4;
     }
 
-    // 2. Schedule the visual update ONLY on the next paint (fixes 'shiver')
-    if (!this.moveRequested) {
-      this.moveRequested = true;
-      requestAnimationFrame(() => {
-        if (this.isDragging) {
-          this.dispatch(this.pendingDeltaX, this.pendingDeltaY, true);
-        }
-        this.pendingDeltaX = 0;
-        this.pendingDeltaY = 0;
-        this.moveRequested = false;
-      });
-    }
+    this.dispatch(deltaX, deltaY, true);
+
+    this.lastX = e.clientX;
+    this.lastY = e.clientY;
+    this.lastTime = now;
   }
 
   private onPointerUp(e: PointerEvent) {
     if (!this.isDragging) return;
+    if (!this.target) return;
+
+    this.target.releasePointerCapture(e.pointerId);
+    this.target.removeEventListener("pointermove", this.pointerMoveListener);
+    this.target.removeEventListener("pointerup", this.pointerUpListener);
+
     this.isDragging = false;
 
-    if (this.target) {
-      this.target.releasePointerCapture(e.pointerId);
-      this.target.removeEventListener("pointermove", this.pointerMoveListener);
-      this.target.removeEventListener("pointerup", this.pointerUpListener);
-    }
-
     const now = performance.now();
+    const moveDistX = Math.abs(e.clientX - this.startX);
+    const moveDistY = Math.abs(e.clientY - this.startY);
     const elapsedSinceStart = now - this.startTime;
     const timeSinceLastMove = now - this.lastTime;
 
-    // Stale check: user held finger still for > 60ms before lifting,
+    // STALE CHECK: If the user held their finger still for > 50ms before lifting,
     // they didn't want to 'fling', they wanted to 'stop'.
-    if (timeSinceLastMove > 60) {
+    if (timeSinceLastMove > 50) {
       this.stopMovement();
       return;
     }
 
-    // Tap check
-    const moveDist = Math.hypot(
-      e.clientX - this.startX,
-      e.clientY - this.startY,
-    );
-    if (moveDist < 10 && elapsedSinceStart < 200) {
+    // TAP CHECK: Small movement, short time.
+    if (moveDistX < 10 && moveDistY < 10 && elapsedSinceStart < 200) {
       this.stopMovement();
       return;
     }

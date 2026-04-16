@@ -1134,7 +1134,7 @@ let d = class extends f {
     switch (this.scrollTimeout && clearTimeout(this.scrollTimeout), e) {
       case "arrowup":
       case "arrowdown":
-        this.repeatedScrollByPixels(t);
+        this.slowScrollBy(t);
         break;
       case "pagedown":
       case "pageup":
@@ -1194,15 +1194,13 @@ let d = class extends f {
     }, this.scrollWaitTime);
   }
   onHostSwipe(e) {
-    var t;
-    if (this.scrollTop = 0, (t = this.fakeScrollbar) != null && t.dragging) {
+    var s;
+    if (this.scrollTop = 0, (s = this.fakeScrollbar) != null && s.dragging) {
       e.preventDefault();
       return;
     }
-    requestAnimationFrame(() => {
-      const s = -e.detail.deltaY * this.swipeDeltaMultiplier;
-      this.slowScrollBy(s, !0), this.dispatchEvent(new CustomEvent("scrolling"));
-    });
+    const i = -e.detail.deltaY * this.swipeDeltaMultiplier;
+    this.slowScrollBy(i, !0), this.dispatchEvent(new CustomEvent("scrolling"));
   }
   /**
    * This function is for highly accurate jumps to a particular
