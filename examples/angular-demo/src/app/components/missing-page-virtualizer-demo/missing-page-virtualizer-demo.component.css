@@ -32,7 +32,6 @@
   flex-direction: column;
   gap: 0.5rem;
   padding: 0.5rem;
-  min-height: 1000px;
 }
 missing-page-virtualizer {
   width: 100%;
@@ -173,4 +172,7 @@ feed-card {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+}
+.is-hidden {
+  opacity: 0;
 }

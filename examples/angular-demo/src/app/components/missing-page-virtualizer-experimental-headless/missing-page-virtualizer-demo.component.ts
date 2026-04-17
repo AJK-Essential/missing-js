@@ -7,6 +7,7 @@ import {
   ViewChild,
   NgZone,
   afterEveryRender,
+  ChangeDetectionStrategy,
 } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { CommonService } from '../../services/common.service.js';
@@ -16,7 +17,7 @@ import { Card } from '../card/card.component.js';
 import '@missing-js/page-virtualizer';
 import '@missing-js/dimension-reporter';
 import '@missing-js/fake-scrollbar';
-import { LoadEventTwo, MissingPageVirtualizerTwo } from '@missing-js/page-virtualizer';
+import { LoadEventVanilla, MissingPageVirtualizerVanilla } from '@missing-js/page-virtualizer';
 import { MissingFakeScrollbar } from '@missing-js/fake-scrollbar';
 import { MissingDimensionReporter } from '@missing-js/dimension-reporter';
 
@@ -26,8 +27,9 @@ import { MissingDimensionReporter } from '@missing-js/dimension-reporter';
   styleUrl: './missing-page-virtualizer-demo.component.css',
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   imports: [Card],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class MissingPageVirtualizerDemo2 implements AfterViewInit {
+export class MissingPageVirtualizerVanillaDemo implements AfterViewInit {
   hostElement;
   commonService = inject(CommonService);
   subscription?: Subscription;
@@ -37,11 +39,14 @@ export class MissingPageVirtualizerDemo2 implements AfterViewInit {
   renderingArray?: { pageIndex: number; data: Message[] }[];
   previousNextArray?: typeof this.renderingArray;
   startIndex = 0;
-  @ViewChild('scroller') scrollRef?: ElementRef<MissingPageVirtualizerTwo>;
+  @ViewChild('scroller') scrollRef?: ElementRef<MissingPageVirtualizerVanilla>;
   @ViewChild('fakeScrollbar') fakeScrollbarRef?: ElementRef<MissingFakeScrollbar>;
-
-  scroller?: MissingPageVirtualizerTwo;
+  @ViewChild('container') containerRef?: ElementRef<HTMLElement>;
+  @ViewChild('nextPrevious') nextPreviousRef?: ElementRef<HTMLElement>;
+  scroller?: MissingPageVirtualizerVanilla;
   fakeScrollbar?: MissingFakeScrollbar;
+  container?: HTMLElement;
+  nextPrevious?: HTMLElement;
 
   currentPage: number = 0;
   startItem = 1;
@@ -54,6 +59,8 @@ export class MissingPageVirtualizerDemo2 implements AfterViewInit {
 
   isScrolling = false;
   swipeDeltaFromInput = 1;
+  translateY = '0px';
+  private thisTempTranslateY = this.translateY;
   private ngZone = inject(NgZone);
   private newArrayRendering = false;
 
@@ -68,7 +75,7 @@ export class MissingPageVirtualizerDemo2 implements AfterViewInit {
             this.scroller
           ) {
             this.scroller.scrollTop = 0;
-            this.scroller.setView();
+            this.container!.style.setProperty(`--translateY`, this.translateY);
             this.newArrayRendering = false;
           }
         }
@@ -79,63 +86,69 @@ export class MissingPageVirtualizerDemo2 implements AfterViewInit {
   ngAfterViewInit(): void {
     this.scroller = this.scrollRef?.nativeElement;
     this.fakeScrollbar = this.fakeScrollbarRef?.nativeElement;
+    this.container = this.containerRef?.nativeElement;
+    this.nextPrevious = this.nextPreviousRef?.nativeElement;
     this.loadMore().then(() => {
-      this.scroller?.updateComplete.then(() => {
-        if (this.scroller && this.fakeScrollbar) {
-          this.scroller.items = this.items;
-          this.scroller.fakeScrollbar = this.fakeScrollbar;
-          this.scroller.initialize();
-          this.fakeScrollbar.classList.add('visible');
-        }
-      });
+      if (this.scroller && this.fakeScrollbar && this.container) {
+        this.scroller.items = this.items;
+        this.scroller.fakeScrollbar = this.fakeScrollbar;
+        this.scroller.container = this.container;
+
+        this.scroller.nextPrevious = this.nextPrevious;
+        this.scroller.initialize();
+        this.fakeScrollbar.classList.add('visible');
+      }
     });
   }
 
   refreshRenderedArrays(e: Event) {
     this.ngZone.runOutsideAngular(() => {
-      const scrollerEvent = e as LoadEventTwo;
+      const scrollerEvent = e as LoadEventVanilla;
       const { indices } = scrollerEvent.detail;
+
       const tempArray1: typeof this.renderingArray = [];
       this.startIndex = indices[0];
       for (let i = indices[0]; i <= indices[1]; ++i) {
         tempArray1.push({ pageIndex: i, data: i <= this.items.length - 1 ? this.items[i] : [] });
       }
-      let nextPreviousSlot: number[] = [];
-      if (this.startIndex === 0) {
-        nextPreviousSlot[0] = this.startIndex + this.scroller!.numOfItems;
-      } else {
-        nextPreviousSlot = [this.startIndex - 1, this.startIndex + this.scroller!.numOfItems];
-      }
-
-      const tempArray2: typeof this.renderingArray = [];
-      for (let i = 0; i < nextPreviousSlot.length; ++i) {
-        const pageIndex = nextPreviousSlot[i];
-        tempArray2.push({
-          pageIndex,
-          data: pageIndex <= this.items.length - 1 ? this.items[pageIndex] : [],
-        });
-      }
+      setTimeout(() => {
+        let nextPreviousSlot: number[] = [];
+        if (this.startIndex === 0) {
+          nextPreviousSlot[0] = this.startIndex + this.scroller!.numOfItems;
+        } else {
+          nextPreviousSlot = [this.startIndex - 1, this.startIndex + this.scroller!.numOfItems];
+        }
+        const tempArray2: typeof this.renderingArray = [];
+        for (let i = 0; i < nextPreviousSlot.length; ++i) {
+          const pageIndex = nextPreviousSlot[i];
+          tempArray2.push({
+            pageIndex,
+            data: pageIndex <= this.items.length - 1 ? this.items[pageIndex] : [],
+          });
+        }
+        this.previousNextArray = tempArray2;
+      }, 1000);
       this.ngZone.run(() => {
         this.newArrayRendering = true;
-        this.previousNextArray = tempArray2;
         this.renderingArray = tempArray1;
+        this.translateY = scrollerEvent.detail.translateY;
       });
     });
   }
 
   updatePageData(isScrolling: boolean) {
-    if (this.scroller) {
-      const currentScrollTop = this.scroller.getCurrentScrollTop();
-      const startPageIndex = this.scroller.getPageIndexForScrollTop(currentScrollTop);
-      const endPageIndex = this.scroller.getPageIndexForScrollTop(
-        currentScrollTop + this.scroller.clientHeight,
-      );
-      if (typeof startPageIndex === 'number' && typeof endPageIndex === 'number') {
-        this.startItem = startPageIndex * this.bucketSize + 1;
-        this.endItem = endPageIndex * this.bucketSize + this.bucketSize;
-      }
-    }
-    this.isScrolling = isScrolling;
+    // if (this.scroller) {
+    //   const currentScrollTop = this.scroller.getCurrentScrollTop();
+    //   const startPageIndex = this.scroller.getPageIndexForScrollTop(currentScrollTop);
+    //   const endPageIndex = this.scroller.getPageIndexForScrollTop(
+    //     currentScrollTop + this.scroller.clientHeight,
+    //   );
+    //   if (typeof startPageIndex === 'number' && typeof endPageIndex === 'number') {
+    //     this.startItem = startPageIndex * this.bucketSize + 1;
+    //     this.endItem = endPageIndex * this.bucketSize + this.bucketSize;
+    //   }
+    // }
+    // this.isScrolling = isScrolling;
   }
 
   loadMore() {
@@ -182,9 +195,7 @@ export class MissingPageVirtualizerDemo2 implements AfterViewInit {
   loadMoreItems() {
     this.loadMore().then(() => {
       this.scroller?.addNewData('append', this.items);
-      this.scroller?.allStable().then(() => {
-        this.fakeScrollbar?.requestUpdate();
-      });
+      this.fakeScrollbar?.requestUpdate();
     });
   }
   storePanelHeight(e: Event) {

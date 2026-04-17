@@ -22,6 +22,7 @@ export declare class MissingPageVirtualizer extends virtualiserKeyboardBase {
     private translateY;
     private startIndex;
     private hostClientHeight;
+    private containerClientWidth;
     listItems: Array<MissingDimensionReporter>;
     private containerResizeObserver;
     private hostResizeObserver;
@@ -45,6 +46,8 @@ export declare class MissingPageVirtualizer extends virtualiserKeyboardBase {
     private slotChangedResolve?;
     private jumpSkipping;
     private accumulatedDelta;
+    private pendingViewTranslate?;
+    private recoveryTimeout?;
     static styles: import('lit').CSSResult;
     render(): import('lit-html').TemplateResult<1>;
     initialize(): void;
@@ -108,5 +111,7 @@ export declare class MissingPageVirtualizer extends virtualiserKeyboardBase {
     private createSlotChangedPromise;
     private waitForSlotChangedEvent;
     private getCurrentGlobalScrollYFromView;
+    setView(): void;
+    executeSetView(): void;
 }
 //# sourceMappingURL=page-virtualizer.d.ts.map

@@ -18,6 +18,7 @@
       (scroll-stopped)="updatePageData(false)"
       swipe-scroll
       [swipeDeltaMultiplier]="swipeDeltaFromInput"
+      [defaultHeight]="3000"
     >
       @for (page of renderingArray; track page.pageIndex) {
         @if (page.pageIndex <= items.length - 1) {
@@ -71,6 +72,60 @@
           </missing-dimension-reporter>
         }
       }
+      <div slot="next-previous">
+        @for (page of previousNextArray; track page.pageIndex) {
+          @if (page.pageIndex <= items.length - 1) {
+            <missing-dimension-reporter
+              [attr.data-page-index]="page.pageIndex"
+              class="page"
+              style="--width: 100%"
+              is-page
+            >
+              @for (item of page.data; track item.cardNumber) {
+                <missing-dimension-reporter
+                  style="
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    flex-direction: column;
+                  "
+                  [attr.data-page-index]="page.pageIndex"
+                >
+                  <feed-card
+                    [attr.data-item-index]="item.cardNumber - 1"
+                    text-content="{{ item.textContent }}"
+                    card-number="{{ item.cardNumber }}"
+                    likes="{{ item.likes }}"
+                    comments="{{ item.comments }}"
+                    reshares="{{ item.reshares }}"
+                    tabindex="0"
+                    [attr.data-page-index]="page.pageIndex"
+                  ></feed-card>
+                  @if (
+                    page.pageIndex === this.items.length - 1 &&
+                    page.data.indexOf(item) === page.data.length - 1 &&
+                    !item.isLast
+                  ) {
+                    <div class="loader-banner">
+                      <button (click)="loadMoreItems()">Load more</button>
+                    </div>
+                  }
+                </missing-dimension-reporter>
+              }
+            </missing-dimension-reporter>
+          } @else {
+            <missing-dimension-reporter
+              [attr.data-page-index]="page.pageIndex"
+              class="page"
+              style="--width: 100%"
+              style="height: 0px"
+              is-page
+            >
+              <div></div>
+            </missing-dimension-reporter>
+          }
+        }
+      </div>
     </missing-page-virtualizer>
   </div>
   <missing-dimension-reporter

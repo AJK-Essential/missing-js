@@ -79,6 +79,9 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
   @property({ type: Number, reflect: true })
   private hostClientHeight = this.clientHeight;
 
+  @property({ type: Number, reflect: true })
+  private containerClientWidth = this.clientWidth;
+
   @queryAssignedElements()
   listItems!: Array<MissingDimensionReporter>;
 
@@ -109,6 +112,8 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
   private slotChangedResolve?: (value: void) => void;
   private jumpSkipping = false;
   private accumulatedDelta = 0;
+  private pendingViewTranslate?: string;
+  private recoveryTimeout?: number;
 
   static override styles = css`
     * {
@@ -145,6 +150,13 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
     :host(.smooth:not(.by-pass)) .container {
       transition: transform var(--transform-transition-time) ease;
     }
+    .ghosts {
+      position: fixed;
+      top: 99999px;
+      visibility: hidden;
+      z-index: -1;
+      opacity: 0;
+    }
   `;
 
   override render() {
@@ -162,45 +174,11 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
                     this.slotChangedResolve();
                     this.slotChangedResolve = undefined;
                   }
-                  // TODO: See if this below function can also be removed.
-                  if (this.pauseUpdate) {
-                    this.classList.add("by-pass");
-                    // const slot = e.currentTarget as HTMLSlotElement;
-                    const assignedNodes = this.innerSlot.assignedElements({
-                      flatten: true,
-                    });
-                    // 2. Wait for the "Browser Paint" (ensure elements are rendered)
-                    await this.tillPainted();
-
-                    // 3. Wait for all active CSS Transitions/Animations to finish
-                    await this.tillStable([this.container, ...assignedNodes]);
-                    this.localScrollY = this.getComputedLocalScrollY();
-                    this.localScrollY += this.accumulatedDelta;
-                    this.container.style.transform = `translateY(${-this.localScrollY}px)`;
-                    this.translateY = `${-this.localScrollY}px`;
-                    this.updateMemoryWithNewHeights();
-                    this.globalScrollY =
-                      (this.startIndex > 0
-                        ? this.ft!.getCumulativeHeight(this.startIndex - 1)
-                        : 0) + this.localScrollY;
-                    this.containerHeight = parseFloat(
-                      this.containerComputedStyle.height,
-                    );
-                    this.fakeScrollbar?.setToScrollTop(this.globalScrollY);
-                    this.pauseUpdate = false;
-                    this.dispatchEvent(new CustomEvent("scroll-stopped"));
-                    this.listItems.forEach(
-                      (listItem) => (listItem.style.opacity = "1"),
-                    );
-                    if (this.scrollTimeout) {
-                      clearTimeout(this.scrollTimeout);
-                    }
-                    this.scrollTimeout = setTimeout(() => {
-                      this.scrolling = false;
-                    }, this.scrollWaitTime);
-                  }
                 }}"
               ></slot>
+            </div>
+            <div class="ghosts" style="width:${this.containerClientWidth}px">
+              <slot name="next-previous"></slot>
             </div>
           `
         : ""}
@@ -271,6 +249,7 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
     if (changedProperties.has("swipeScroll")) {
       if (this.swipeScroll) {
         this.swipePhysics = new MissingSwipePhysicsEmitter();
+        this.swipePhysics.friction = 0.96;
         this.swipePhysics.emitFor(this);
       } else {
         this.swipePhysics?.destroy();
@@ -324,7 +303,6 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
       const cumulativePreviousHeight =
         firstIndex !== 0 ? this.ft.getCumulativeHeight(firstIndex - 1) : 0;
       const calculatedTranslateY = -(scrollTop - cumulativePreviousHeight);
-
       this.translateY = `${calculatedTranslateY}px`;
       this.localScrollY = -calculatedTranslateY;
 
@@ -367,6 +345,7 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
   }
 
   containerResize() {
+    this.containerClientWidth = parseFloat(this.containerComputedStyle.width);
     this.updateContainerHeight();
   }
 
@@ -386,23 +365,16 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
       this.onElementResize(element);
     }
   }
-  // TODO: See if this function can be eliminated in future updates
   slowScrollBy(delta = 0, byPassTransitions = false) {
-    if (this.pauseUpdate) {
-      this.accumulatedDelta += delta;
-      return;
-    } else {
-      this.accumulatedDelta = 0;
-    }
     if (this.scrollTimeout) {
       clearTimeout(this.scrollTimeout);
     }
+    this.scrollTimeout = setTimeout(() => {
+      this.dispatchEvent(new CustomEvent("scroll-stopped"));
+      this.scrolling = false;
+    }, this.scrollWaitTime);
     this.updateMemoryWithNewHeights();
-    if (!this.scrolling) {
-      this.updateContainerHeight();
-      this.localScrollY = this.getComputedLocalScrollY();
-    }
-    this.direction = delta > 0 ? "DOWN" : delta < 0 ? "UP" : "STABLE";
+
     this.dispatchEvent(new CustomEvent("scrolling"));
     this.scrolling = true;
     if (byPassTransitions) {
@@ -410,137 +382,66 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
     } else {
       this.classList.remove("by-pass");
     }
-    if (
-      this.direction === "DOWN" &&
-      this.localScrollY + delta > this.containerHeight - this.clientHeight &&
-      this.startIndex + this.numOfItems <= this.items.length - 1
-    ) {
-      // new page has to be loaded below
-      this.classList.add("by-pass");
+    this.localScrollY =
+      this.translateY !== "" ? -parseFloat(this.translateY) : 0;
+    this.localScrollY += delta;
+    const pageTop =
+      this.startIndex === 0
+        ? 0
+        : this.ft!.getCumulativeHeight(this.startIndex - 1);
+    this.globalScrollY = pageTop + this.localScrollY;
+    // Correction to not pull up beyond known limits
+    const roundedGlobalScrollY = Math.min(
+      Math.max(0, this.globalScrollY),
+      this.virtualScrollHeight - this.clientHeight,
+    );
+    const excessGlobalDelta = roundedGlobalScrollY - this.globalScrollY;
+    this.localScrollY -= excessGlobalDelta;
+    this.globalScrollY = roundedGlobalScrollY;
+    this.fakeScrollbar?.setToScrollTop(this.globalScrollY);
+    const firstIndex = this.ft!.findIndexOfPixel(this.globalScrollY);
+    const cumulativePreviousHeight =
+      firstIndex !== 0 ? this.ft!.getCumulativeHeight(firstIndex - 1) : 0;
+    const calculatedTranslateY = -(
+      this.globalScrollY - cumulativePreviousHeight
+    );
+    if (this.pauseUpdate) {
+      this.accumulatedDelta += delta;
+      this.container.style.setProperty(
+        `--translateY`,
+        `${-this.localScrollY}px`,
+      );
+      return;
+    }
+    if (firstIndex !== this.startIndex) {
+      this.container.style.setProperty(
+        "--translateY",
+        `${-this.localScrollY}px`,
+      );
       this.pauseUpdate = true;
-      const heightOfFirstPage = this.querySelector(
-        this.uniqueSelector,
-      )!.getBoundingClientRect().height;
-      const fixedBlockHeight = this.containerHeight - heightOfFirstPage;
-      const offsetFromFixedBlock =
-        this.localScrollY + delta - heightOfFirstPage;
-      const extraOffset = offsetFromFixedBlock - fixedBlockHeight;
-      const newIndex = this.startIndex + 1;
-      const newTransformY = fixedBlockHeight + extraOffset;
-      // we need to hide the opacity temporarily so as to avoid FOUC.
-      // it is restored later in the slot change update if check
-      if (this.noOpacityChange) {
-        this.noOpacityChange = false;
-      } else {
-        this.listItems.forEach((listItem) => (listItem.style.opacity = "0"));
-      }
-      this.translateY = `${-newTransformY}px`;
-      this.startIndex = newIndex;
-
-      this.dispatchEvent(
-        new CustomEvent("load", {
-          detail: {
-            indices: [this.startIndex, this.startIndex + this.numOfItems - 1],
-          },
-        }),
-      );
-
-      if (this.needsTransition && !byPassTransitions) {
-        const container = this.container!;
-        const animation = container.animate(
-          [
-            // Keyframes
-            { transform: `translateY(${-newTransformY + delta}px)` }, // Start
-            { transform: `translateY(${-newTransformY}px)` }, // End
-          ],
-          {
-            // Timing options
-            duration: 300,
-            easing: "ease",
-          },
-        );
-        animation.finished.then(() => {});
-      }
-      // }, 0);
-    } else if (
-      this.direction === "UP" &&
-      this.localScrollY + delta <= 0 &&
-      this.startIndex - 1 >= 0
-    ) {
-      // new page has to be loaded above
       this.classList.add("by-pass");
-      this.pauseUpdate = true;
-      const allPages = this.querySelectorAll(this.uniqueSelector);
-      const lastPage = allPages[allPages.length - 1];
-      const heightOfLastPage = lastPage!.getBoundingClientRect().height;
-      const fixedBlockHeight = this.containerHeight - heightOfLastPage;
-      const reverseScrollY = this.containerHeight - this.localScrollY;
-      const offsetFromFixedBlock =
-        reverseScrollY + Math.abs(delta) - heightOfLastPage;
-      const extraOffset = offsetFromFixedBlock - fixedBlockHeight;
-      const transformYFromBottom = fixedBlockHeight + extraOffset;
-      // we need to hide the opacity temporarily so as to avoid FOUC.
-      // it is restored later in the slot change update if check
-      if (this.noOpacityChange) {
-        this.noOpacityChange = false;
-      } else {
-        this.listItems.forEach((listItem) => (listItem.style.opacity = "0"));
-      }
-      this.translateY = `calc(-100% + ${transformYFromBottom}px)`;
-      const newIndex = this.startIndex - 1;
-      this.startIndex = newIndex;
+      this.startIndex = firstIndex;
+      this.pendingViewTranslate = `${calculatedTranslateY}px`;
 
-      this.dispatchEvent(
-        new CustomEvent("load", {
-          detail: {
-            indices: [this.startIndex, this.startIndex + this.numOfItems - 1],
-          },
-        }),
-      );
-      if (this.needsTransition && !byPassTransitions) {
-        const container = this.container!;
-        const animation = container.animate(
-          [
-            // Keyframes
-            {
-              transform: `translateY(calc(-100% + ${transformYFromBottom + delta}px))`,
-            }, // Start
-            {
-              transform: `translateY(calc(-100% + ${transformYFromBottom}px))`,
-            }, // End
-          ],
-          {
-            // Timing options
-            duration: 300,
-            easing: "ease",
-          },
-        );
-        animation.finished.then(() => {});
+      if (this.recoveryTimeout) {
+        clearTimeout(this.recoveryTimeout);
       }
-    } else {
-      // this is normal scrolling
-      this.localScrollY += delta;
-      this.localScrollY = Math.min(
-        Math.max(0, this.localScrollY),
-        this.containerHeight - this.clientHeight,
-      );
-      this.translateY = `${-this.localScrollY}px`;
-      this.globalScrollY =
-        (this.startIndex > 0
-          ? this.ft!.getCumulativeHeight(this.startIndex - 1)
-          : 0) + this.localScrollY;
-      this.fakeScrollbar?.setToScrollTop(this.globalScrollY);
-      this.allStable().then(() => {
-        if (!this.pauseUpdate) {
-          if (this.scrollTimeout) {
-            clearTimeout(this.scrollTimeout);
-          }
-          this.scrollTimeout = setTimeout(() => {
-            this.scrolling = false;
-            this.dispatchEvent(new CustomEvent("scroll-stopped"));
-          }, this.scrollWaitTime);
+      this.recoveryTimeout = setTimeout(() => {
+        if (this.pauseUpdate) {
+          console.warn("Recovery: Angular took > 500ms. Forcing setView.");
+          this.setView();
         }
-      });
+      }, 500); // 500ms is a safe "user frustration" threshold
+
+      this.dispatchEvent(
+        new CustomEvent("load", {
+          detail: {
+            indices: [this.startIndex, this.startIndex + this.numOfItems - 1],
+          },
+        }),
+      );
+    } else {
+      this.translateY = `${calculatedTranslateY}px`;
     }
   }
 
@@ -767,21 +668,12 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
       case "arrowup":
       case "arrowdown":
         {
-          this.repeatedScrollByPixels(increment);
+          this.slowScrollBy(increment, true);
         }
         break;
       case "pagedown":
       case "pageup": {
-        if (this.pauseUpdate) return;
-        this.updateMemoryWithNewHeights();
-        let currentGlobalScrollY = this.getCurrentGlobalScrollYFromView();
-        let requiredGlobalScrollY = currentGlobalScrollY + increment;
-        // setting it within limits. so that pageup and pagedown still happen
-        requiredGlobalScrollY = Math.min(
-          Math.max(0, requiredGlobalScrollY),
-          this.virtualScrollHeight - this.clientHeight,
-        );
-        await this.accurateJumpTo(requiredGlobalScrollY);
+        this.slowScrollBy(increment, true);
       }
     }
   }
@@ -906,7 +798,6 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
       e.preventDefault();
       return;
     }
-
     const swipeEvent = e as MissingSwipePhysicsEvent;
     const scrollDelta = -swipeEvent.detail.deltaY * this.swipeDeltaMultiplier;
     this.slowScrollBy(scrollDelta, true);
@@ -1011,5 +902,35 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
         ? this.ft!.getCumulativeHeight(this.startIndex - 1)
         : 0) + localScrollY;
     return globalScrollY;
+  }
+  public setView() {
+    if (!this.pendingViewTranslate) {
+      this.pauseUpdate = false;
+      return;
+    }
+    this.executeSetView();
+  }
+  executeSetView() {
+    this.container.style.opacity = "0";
+    this.localScrollY = -parseFloat(this.pendingViewTranslate!);
+    if (this.accumulatedDelta) {
+      this.localScrollY += this.accumulatedDelta;
+      this.accumulatedDelta = 0;
+    }
+    this.container.style.setProperty(`--translateY`, `${-this.localScrollY}px`);
+    this.translateY = `${-this.localScrollY}px`;
+    this.pendingViewTranslate = undefined;
+    const pageTop =
+      this.startIndex === 0
+        ? 0
+        : this.ft!.getCumulativeHeight(this.startIndex - 1);
+    this.globalScrollY = pageTop + this.localScrollY;
+    this.fakeScrollbar?.setToScrollTop(this.globalScrollY);
+    this.pauseUpdate = false;
+    setTimeout(() => {
+      requestAnimationFrame(() => {
+        this.container.style.opacity = "1";
+      });
+    });
   }
 }

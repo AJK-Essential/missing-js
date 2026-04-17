@@ -5,6 +5,8 @@ import {
   ElementRef,
   inject,
   ViewChild,
+  NgZone,
+  afterEveryRender,
 } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { CommonService } from '../../services/common.service.js';
@@ -33,6 +35,7 @@ export class MissingPageVirtualizerDemo implements AfterViewInit {
   renderedArray: Message[][] = [];
 
   renderingArray?: { pageIndex: number; data: Message[] }[];
+  previousNextArray?: typeof this.renderingArray;
   startIndex = 0;
   @ViewChild('scroller') scrollRef?: ElementRef<MissingPageVirtualizer>;
   @ViewChild('fakeScrollbar') fakeScrollbarRef?: ElementRef<MissingFakeScrollbar>;
@@ -51,9 +54,26 @@ export class MissingPageVirtualizerDemo implements AfterViewInit {
 
   isScrolling = false;
   swipeDeltaFromInput = 1;
+  private ngZone = inject(NgZone);
+  private newArrayRendering = false;
 
   constructor(elRef: ElementRef) {
     this.hostElement = elRef.nativeElement;
+    afterEveryRender({
+      write: () => {
+        if (this.newArrayRendering) {
+          if (
+            this.renderingArray &&
+            this.renderingArray[0].pageIndex === this.startIndex &&
+            this.scroller
+          ) {
+            this.scroller.scrollTop = 0;
+            this.scroller.setView();
+            this.newArrayRendering = false;
+          }
+        }
+      },
+    });
   }
 
   ngAfterViewInit(): void {
@@ -72,14 +92,37 @@ export class MissingPageVirtualizerDemo implements AfterViewInit {
   }
 
   refreshRenderedArrays(e: Event) {
-    const scrollerEvent = e as LoadEvent;
-    const { indices } = scrollerEvent.detail;
-    const tempArray = [];
-    this.startIndex = indices[0];
-    for (let i = indices[0]; i <= indices[1]; ++i) {
-      tempArray.push({ pageIndex: i, data: i <= this.items.length - 1 ? this.items[i] : [] });
-    }
-    this.renderingArray = tempArray;
+    this.ngZone.runOutsideAngular(() => {
+      const scrollerEvent = e as LoadEvent;
+      const { indices } = scrollerEvent.detail;
+      const tempArray1: typeof this.renderingArray = [];
+      this.startIndex = indices[0];
+      for (let i = indices[0]; i <= indices[1]; ++i) {
+        tempArray1.push({ pageIndex: i, data: i <= this.items.length - 1 ? this.items[i] : [] });
+      }
+      setTimeout(() => {
+        let nextPreviousSlot: number[] = [];
+        if (this.startIndex === 0) {
+          nextPreviousSlot[0] = this.startIndex + this.scroller!.numOfItems;
+        } else {
+          nextPreviousSlot = [this.startIndex - 1, this.startIndex + this.scroller!.numOfItems];
+        }
+        const tempArray2: typeof this.renderingArray = [];
+        for (let i = 0; i < nextPreviousSlot.length; ++i) {
+          const pageIndex = nextPreviousSlot[i];
+          tempArray2.push({
+            pageIndex,
+            data: pageIndex <= this.items.length - 1 ? this.items[pageIndex] : [],
+          });
+        }
+        this.previousNextArray = tempArray2;
+      }, 1000);
+      this.ngZone.run(() => {
+        this.newArrayRendering = true;
+        // this.previousNextArray = tempArray2;
+        this.renderingArray = tempArray1;
+      });
+    });
   }
 
   updatePageData(isScrolling: boolean) {
@@ -124,7 +167,7 @@ export class MissingPageVirtualizerDemo implements AfterViewInit {
 
           // 3. Append new buckets to existing items
           // This preserves your previous 10,000 pages and adds the new ones
-          this.items = [...this.items, ...newBuckets];
+          this.items.push(...newBuckets);
 
           this.isLoading = false;
           this.currentChunk++;

@@ -176,3 +176,44 @@ feed-card {
 .is-hidden {
   opacity: 0;
 }
+missing-page-virtualizer-vanilla {
+  display: block;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  --transform-transition-time: 0.3s;
+}
+missing-page-virtualizer-vanilla[swipe-scroll],
+missing-page-virtualizer-vanilla[swipe-scroll] .container,
+missing-page-virtualizer-vanilla[swipe-scroll] ::slotted(*) {
+  touch-action: none;
+  overscroll-behavior: none;
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+missing-page-virtualizer-vanilla.smooth:not(.by-pass) .container {
+  transition: transform var(--transform-transition-time) ease;
+}
+.container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: fit-content;
+  transform: translate3D(0, var(--translateY), 0);
+  will-change: transform;
+  min-height: 150vh;
+  /* Add this to force the browser to keep the buffer pages in GPU memory */
+  backface-visibility: hidden;
+  contain: layout paint;
+}
+.next-previous {
+  position: fixed;
+  top: 99999px;
+  visibility: hidden;
+  z-index: -1;
+  opacity: 0;
+  contain: layout paint;
+}
