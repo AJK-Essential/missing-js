@@ -167,7 +167,7 @@ export class MissingPageVirtualizerDemo implements AfterViewInit {
 
           // 3. Append new buckets to existing items
           // This preserves your previous 10,000 pages and adds the new ones
-          this.items.push(...newBuckets);
+          this.items = [...this.items, ...newBuckets];
 
           this.isLoading = false;
           this.currentChunk++;
