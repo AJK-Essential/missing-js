@@ -258,7 +258,7 @@ b([
  */
 class H {
   constructor() {
-    this.friction = 0.95, this.velocityX = 0, this.velocityY = 0, this.isDragging = !1, this.lastX = 0, this.lastY = 0, this.lastTime = 0, this.startX = 0, this.startY = 0, this.startTime = 0, this.animationId = null, this.pointerMoveListener = this.onPointerMove.bind(this), this.pointerDownListener = this.onPointerDown.bind(this), this.pointerUpListener = this.onPointerUp.bind(this), this.physicsLoop = () => {
+    this.friction = 0.88, this.velocityX = 0, this.velocityY = 0, this.isDragging = !1, this.lastX = 0, this.lastY = 0, this.lastTime = 0, this.startX = 0, this.startY = 0, this.startTime = 0, this.animationId = null, this.pointerMoveListener = this.onPointerMove.bind(this), this.pointerDownListener = this.onPointerDown.bind(this), this.pointerUpListener = this.onPointerUp.bind(this), this.physicsLoop = () => {
       if (this.isDragging) return;
       const t = performance.now(), i = t - this.lastTime;
       this.lastTime = t;
@@ -917,7 +917,7 @@ let d = class extends f {
   }
   updated(e) {
     var t;
-    super.updated(e), this.fakeScrollbar && (e.has("hostClientHeight") || e.has("virtualScrollHeight")) && (this.fakeScrollbar.targetClientHeight = this.hostClientHeight, this.fakeScrollbar.targetScrollHeight = this.virtualScrollHeight), e.has("swipeScroll") && (this.swipeScroll ? (this.swipePhysics = new H(), this.swipePhysics.emitFor(this)) : (t = this.swipePhysics) == null || t.destroy());
+    super.updated(e), this.fakeScrollbar && (e.has("hostClientHeight") || e.has("virtualScrollHeight")) && (this.fakeScrollbar.targetClientHeight = this.hostClientHeight, this.fakeScrollbar.targetScrollHeight = this.virtualScrollHeight), e.has("swipeScroll") && (this.swipeScroll ? (this.swipePhysics = new H(), this.swipePhysics.friction = 0.96, this.swipePhysics.emitFor(this)) : (t = this.swipePhysics) == null || t.destroy());
   }
   disconnectedCallback() {
     this.removeEventListener(
@@ -1123,7 +1123,7 @@ let d = class extends f {
     switch (this.scrollTimeout && clearTimeout(this.scrollTimeout), e) {
       case "arrowup":
       case "arrowdown":
-        this.slowScrollBy(t);
+        this.slowScrollBy(t, !0);
         break;
       case "pagedown":
       case "pageup":
