@@ -103,9 +103,9 @@ export class MissingPageVirtualizerDemo implements AfterViewInit {
       setTimeout(() => {
         let nextPreviousSlot: number[] = [];
         if (this.startIndex === 0) {
-          nextPreviousSlot[0] = this.startIndex + this.scroller!.numOfItems;
+          nextPreviousSlot = [];
         } else {
-          nextPreviousSlot = [this.startIndex - 1, this.startIndex + this.scroller!.numOfItems];
+          nextPreviousSlot = [this.startIndex - 1];
         }
         const tempArray2: typeof this.renderingArray = [];
         for (let i = 0; i < nextPreviousSlot.length; ++i) {
@@ -116,7 +116,7 @@ export class MissingPageVirtualizerDemo implements AfterViewInit {
           });
         }
         this.previousNextArray = tempArray2;
-      }, 1000);
+      }, 2000);
       this.ngZone.run(() => {
         this.newArrayRendering = true;
         // this.previousNextArray = tempArray2;
