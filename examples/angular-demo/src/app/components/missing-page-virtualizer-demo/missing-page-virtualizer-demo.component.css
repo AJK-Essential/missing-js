@@ -16,7 +16,7 @@
   width: 50%;
   display: flex;
   height: 100%;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgb(28 104 151 / 69%);
   border-radius: 8px;
 }
 .virtualizer-holder {
@@ -164,9 +164,10 @@ feed-card {
   padding: 1rem;
   width: 100%;
   border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgb(28 104 151 / 69%);
   overflow: hidden;
   border-radius: 8px;
+  background: rgb(2 12 19);
 }
 .info-area {
   display: flex;

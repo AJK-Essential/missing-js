@@ -52,5 +52,6 @@ header {
 }
 .nav-ol li a.active {
   color: white;
-  border-bottom: 2px solid white;
+  border-bottom: 2px solid rgb(0 105 178);
+  background: rgb(2 12 19 / 15%);
 }
