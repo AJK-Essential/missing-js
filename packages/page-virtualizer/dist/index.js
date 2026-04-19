@@ -708,13 +708,9 @@ let n = class extends u {
   }
   executeSetView() {
     var t;
-    this.container.style.opacity = "0", this.localScrollY = -parseFloat(this.pendingViewTranslate), this.accumulatedDelta && (this.localScrollY += this.accumulatedDelta, this.accumulatedDelta = 0), this.container.style.setProperty("--translateY", `${-this.localScrollY}px`), this.translateY = `${-this.localScrollY}px`, this.pendingViewTranslate = void 0;
+    this.localScrollY = -parseFloat(this.pendingViewTranslate), this.accumulatedDelta && (this.localScrollY += this.accumulatedDelta, this.accumulatedDelta = 0), this.container.style.setProperty("--translateY", `${-this.localScrollY}px`), this.translateY = `${-this.localScrollY}px`, this.pendingViewTranslate = void 0;
     const l = this.startIndex === 0 ? 0 : this.ft.getCumulativeHeight(this.startIndex - 1);
-    this.globalScrollY = l + this.localScrollY, (t = this.fakeScrollbar) == null || t.setToScrollTop(this.globalScrollY), this.pauseUpdate = !1, setTimeout(() => {
-      requestAnimationFrame(() => {
-        this.container.style.opacity = "1";
-      });
-    });
+    this.globalScrollY = l + this.localScrollY, (t = this.fakeScrollbar) == null || t.setToScrollTop(this.globalScrollY), this.pauseUpdate = !1;
   }
 };
 n.styles = y`
@@ -748,6 +744,7 @@ n.styles = y`
       min-height: 150vh;
       /* Add this to force the browser to keep the buffer pages in GPU memory */
       backface-visibility: hidden;
+      contain: layout paint;
     }
     :host(.smooth:not(.by-pass)) .container {
       transition: transform var(--transform-transition-time) ease;
@@ -758,6 +755,7 @@ n.styles = y`
       visibility: hidden;
       z-index: -1;
       opacity: 0;
+      contain: layout paint;
     }
   `;
 c([

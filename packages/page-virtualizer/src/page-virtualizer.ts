@@ -146,6 +146,7 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
       min-height: 150vh;
       /* Add this to force the browser to keep the buffer pages in GPU memory */
       backface-visibility: hidden;
+      contain: layout paint;
     }
     :host(.smooth:not(.by-pass)) .container {
       transition: transform var(--transform-transition-time) ease;
@@ -156,6 +157,7 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
       visibility: hidden;
       z-index: -1;
       opacity: 0;
+      contain: layout paint;
     }
   `;
 
@@ -911,7 +913,6 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
     this.executeSetView();
   }
   executeSetView() {
-    this.container.style.opacity = "0";
     this.localScrollY = -parseFloat(this.pendingViewTranslate!);
     if (this.accumulatedDelta) {
       this.localScrollY += this.accumulatedDelta;
@@ -927,10 +928,5 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
     this.globalScrollY = pageTop + this.localScrollY;
     this.fakeScrollbar?.setToScrollTop(this.globalScrollY);
     this.pauseUpdate = false;
-    setTimeout(() => {
-      requestAnimationFrame(() => {
-        this.container.style.opacity = "1";
-      });
-    });
   }
 }
