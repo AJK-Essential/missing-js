@@ -82,7 +82,7 @@
               is-page
             >
               @for (item of page.data; track item.cardNumber) {
-                <missing-dimension-reporter
+                <div
                   style="
                     display: flex;
                     justify-content: center;
@@ -110,7 +110,7 @@
                       <button (click)="loadMoreItems()">Load more</button>
                     </div>
                   }
-                </missing-dimension-reporter>
+                </div>
               }
             </missing-dimension-reporter>
           } @else {
@@ -133,7 +133,7 @@
     (dimension-changed)="storePanelHeight($event)"
   >
     <div class="panel info-area">
-      <div class="instruction-panel" style="overflow: auto">
+      <div class="instruction-panel general-information" style="overflow: auto">
         <div>
           This is a demo of a paged-virtualizer component that can technically remember the heights
           of 10^6 pages. If u inspect the DOM, only a few DOM elements are there that simulate the
