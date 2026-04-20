@@ -4,6 +4,13 @@
   border-radius: 24px;
   background-color: rgb(2 12 19);
   padding: 1rem 1rem;
+  /**
+  * better to have zero transitions at all,
+  * or,
+  * atleast no transitions on size
+  * affecting properties like padding,
+  * width etc.
+  */
   transition: all 0.1s ease;
 }
 
