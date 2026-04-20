@@ -119,7 +119,6 @@ export class MissingPageVirtualizerDemo implements AfterViewInit {
       }, 2000);
       this.ngZone.run(() => {
         this.newArrayRendering = true;
-        // this.previousNextArray = tempArray2;
         this.renderingArray = tempArray1;
       });
     });
