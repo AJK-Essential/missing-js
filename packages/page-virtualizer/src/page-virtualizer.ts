@@ -913,6 +913,15 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
     this.executeSetView();
   }
   executeSetView() {
+    this.scrolling = true;
+    if (this.scrollTimeout) {
+      clearTimeout(this.scrollTimeout);
+    }
+    this.scrollTimeout = setTimeout(() => {
+      this.dispatchEvent(new CustomEvent("scroll-stopped"));
+      this.scrolling = false;
+    }, this.scrollWaitTime);
+    this.classList.add("by-pass");
     this.localScrollY = -parseFloat(this.pendingViewTranslate!);
     if (this.accumulatedDelta) {
       this.localScrollY += this.accumulatedDelta;

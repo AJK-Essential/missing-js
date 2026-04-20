@@ -708,7 +708,9 @@ let n = class extends u {
   }
   executeSetView() {
     var t;
-    this.localScrollY = -parseFloat(this.pendingViewTranslate), this.accumulatedDelta && (this.localScrollY += this.accumulatedDelta, this.accumulatedDelta = 0), this.container.style.setProperty("--translateY", `${-this.localScrollY}px`), this.translateY = `${-this.localScrollY}px`, this.pendingViewTranslate = void 0;
+    this.scrolling = !0, this.scrollTimeout && clearTimeout(this.scrollTimeout), this.scrollTimeout = setTimeout(() => {
+      this.dispatchEvent(new CustomEvent("scroll-stopped")), this.scrolling = !1;
+    }, this.scrollWaitTime), this.classList.add("by-pass"), this.localScrollY = -parseFloat(this.pendingViewTranslate), this.accumulatedDelta && (this.localScrollY += this.accumulatedDelta, this.accumulatedDelta = 0), this.container.style.setProperty("--translateY", `${-this.localScrollY}px`), this.translateY = `${-this.localScrollY}px`, this.pendingViewTranslate = void 0;
     const l = this.startIndex === 0 ? 0 : this.ft.getCumulativeHeight(this.startIndex - 1);
     this.globalScrollY = l + this.localScrollY, (t = this.fakeScrollbar) == null || t.setToScrollTop(this.globalScrollY), this.pauseUpdate = !1;
   }
