@@ -250,7 +250,3 @@ feed-card,
   filter: brightness(1.5);
   outline: 0.5px solid rgb(28 104 151 / 69%);
 }
-
-missing-page-virtualizer * {
-  transition: height 0s;
-}
