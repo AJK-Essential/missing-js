@@ -8,8 +8,12 @@ export interface SwipePhysicsDetail {
   isDragging: boolean;
 }
 
+/**
+ * High-Performance Swipe Emitter with Coalesced Event Handling
+ * Optimized for 120Hz mobile screens and Lit/Angular integration.
+ */
 export class MissingSwipePhysicsEmitter {
-  public friction: number = 0.88;
+  public friction: number = 0.95;
 
   private velocityX: number = 0;
   private velocityY: number = 0;
@@ -24,8 +28,12 @@ export class MissingSwipePhysicsEmitter {
   private startTime: number = 0;
 
   private animationId: number | null = null;
-
   private target?: HTMLElement | null;
+
+  // Throttling State to prevent "shiver"
+  private pendingDeltaX: number = 0;
+  private pendingDeltaY: number = 0;
+  private moveRequested: boolean = false;
 
   private pointerMoveListener = this.onPointerMove.bind(this);
   private pointerDownListener = this.onPointerDown.bind(this);
@@ -36,6 +44,7 @@ export class MissingSwipePhysicsEmitter {
     // 'pan-y' or 'none' depending on your vertical scroll needs.
     // 'none' is safest for full custom control.
     this.target.style.touchAction = "none";
+    this.target.style.userSelect = "none";
     this.target.addEventListener("pointerdown", this.pointerDownListener);
   }
 
@@ -46,10 +55,14 @@ export class MissingSwipePhysicsEmitter {
     }
     this.velocityX = 0;
     this.velocityY = 0;
+    this.pendingDeltaX = 0;
+    this.pendingDeltaY = 0;
   }
 
   private dispatch(deltaX: number, deltaY: number, isDragging: boolean): void {
     if (!this.target) return;
+
+    // Passing raw floats allows the GPU to render sub-pixels smoothly
     const detail: SwipePhysicsDetail = {
       deltaX,
       deltaY,
@@ -57,12 +70,14 @@ export class MissingSwipePhysicsEmitter {
       velocityY: this.velocityY,
       isDragging,
     };
-    const event: MissingSwipePhysicsEvent = new CustomEvent("swipe-detected", {
-      detail,
-      bubbles: true,
-      composed: true,
-    });
-    this.target.dispatchEvent(event);
+
+    this.target.dispatchEvent(
+      new CustomEvent("swipe-detected", {
+        detail,
+        bubbles: true,
+        composed: true,
+      }),
+    );
   }
 
   private onPointerDown(e: PointerEvent) {
@@ -73,11 +88,14 @@ export class MissingSwipePhysicsEmitter {
 
     this.startX = e.clientX;
     this.startY = e.clientY;
-    this.startTime = performance.now();
+
+    // Sync starting time with the hardware event timestamp
+    this.startTime = e.timeStamp;
 
     this.lastX = this.startX;
     this.lastY = this.startY;
     this.lastTime = this.startTime;
+
     this.target.setPointerCapture(e.pointerId);
     this.target.removeEventListener("pointermove", this.pointerMoveListener);
     this.target.removeEventListener("pointerup", this.pointerUpListener);
@@ -88,58 +106,85 @@ export class MissingSwipePhysicsEmitter {
   private onPointerMove(e: PointerEvent) {
     if (!this.isDragging) return;
 
-    const now = performance.now();
-    const deltaX = e.clientX - this.lastX;
-    const deltaY = e.clientY - this.lastY;
-    const deltaTime = now - this.lastTime;
+    // 1. Process all high-res touch points
+    const events = (e as any).getCoalescedEvents
+      ? (e as any).getCoalescedEvents()
+      : [e];
 
-    if (deltaTime > 0) {
-      const instantaneousVX = deltaX / deltaTime;
-      const instantaneousVY = deltaY / deltaTime;
+    for (const coalescedEvent of events) {
+      // Use the exact time the hardware registered the touch point
+      const now = coalescedEvent.timeStamp;
 
-      // WEIGHTED SMOOTHING: Prevents a single jittery frame at the end
-      // from killing the momentum (the 'Android Stickiness' fix).
-      this.velocityX = this.velocityX * 0.6 + instantaneousVX * 0.4;
-      this.velocityY = this.velocityY * 0.6 + instantaneousVY * 0.4;
+      const deltaX = coalescedEvent.clientX - this.lastX;
+      const deltaY = coalescedEvent.clientY - this.lastY;
+      const deltaTime = now - this.lastTime;
+
+      // Ensure deltaTime is > 1 to avoid division by zero anomalies
+      if (deltaTime > 1) {
+        const instantaneousVX = deltaX / deltaTime;
+        const instantaneousVY = deltaY / deltaTime;
+
+        // WEIGHTED SMOOTHING: Prevents a single jittery frame at the end
+        // from killing the momentum (the 'Android Stickiness' fix).
+        this.velocityX = this.velocityX * 0.7 + instantaneousVX * 0.3;
+        this.velocityY = this.velocityY * 0.7 + instantaneousVY * 0.3;
+      }
+
+      this.pendingDeltaX += deltaX;
+      this.pendingDeltaY += deltaY;
+
+      this.lastX = coalescedEvent.clientX;
+      this.lastY = coalescedEvent.clientY;
+      this.lastTime = now;
     }
 
-    this.dispatch(deltaX, deltaY, true);
-
-    this.lastX = e.clientX;
-    this.lastY = e.clientY;
-    this.lastTime = now;
+    // 2. Schedule the visual update ONLY on the next paint
+    if (!this.moveRequested) {
+      this.moveRequested = true;
+      requestAnimationFrame(() => {
+        if (this.isDragging) {
+          this.dispatch(this.pendingDeltaX, this.pendingDeltaY, true);
+        }
+        this.pendingDeltaX = 0;
+        this.pendingDeltaY = 0;
+        this.moveRequested = false;
+      });
+    }
   }
 
   private onPointerUp(e: PointerEvent) {
     if (!this.isDragging) return;
-    if (!this.target) return;
-
-    this.target.releasePointerCapture(e.pointerId);
-    this.target.removeEventListener("pointermove", this.pointerMoveListener);
-    this.target.removeEventListener("pointerup", this.pointerUpListener);
-
     this.isDragging = false;
 
+    if (this.target) {
+      this.target.releasePointerCapture(e.pointerId);
+      this.target.removeEventListener("pointermove", this.pointerMoveListener);
+      this.target.removeEventListener("pointerup", this.pointerUpListener);
+    }
+
     const now = performance.now();
-    const moveDistX = Math.abs(e.clientX - this.startX);
-    const moveDistY = Math.abs(e.clientY - this.startY);
-    const elapsedSinceStart = now - this.startTime;
+    const elapsedSinceStart = now - this.startTime; // We compare against performance.now() here which is fine for rough ms checks
     const timeSinceLastMove = now - this.lastTime;
 
-    // STALE CHECK: If the user held their finger still for > 50ms before lifting,
+    // Stale check: user held finger still for > 60ms before lifting,
     // they didn't want to 'fling', they wanted to 'stop'.
-    if (timeSinceLastMove > 50) {
+    if (timeSinceLastMove > 60) {
       this.stopMovement();
       return;
     }
 
-    // TAP CHECK: Small movement, short time.
-    if (moveDistX < 10 && moveDistY < 10 && elapsedSinceStart < 200) {
+    // Tap check
+    const moveDist = Math.hypot(
+      e.clientX - this.startX,
+      e.clientY - this.startY,
+    );
+    if (moveDist < 10 && elapsedSinceStart < 200) {
       this.stopMovement();
       return;
     }
 
-    // Reset lastTime to current for the physicsLoop delta calculation
+    // Reset lastTime to current performance.now() to seamlessly hand off
+    // to the requestAnimationFrame physics loop timeline
     this.lastTime = performance.now();
     this.animationId = requestAnimationFrame(this.physicsLoop);
   }

@@ -9,6 +9,18 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'slot-cycler',
+    loadComponent: () =>
+      import('./components/slot-cycler-test/slot-cycler.component').then((c) => c.SlotCycler),
+  },
+  {
+    path: 'slot-cycler-scrollbar',
+    loadComponent: () =>
+      import('./components/slot-cycler-test/slot-cycler.component-scrollbar').then(
+        (c) => c.SlotCycler,
+      ),
+  },
+  {
     path: '',
     loadComponent: () =>
       import('./components/missing-page-virtualizer-demo/missing-page-virtualizer-demo.component').then(

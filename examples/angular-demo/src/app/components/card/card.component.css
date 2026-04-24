@@ -20,7 +20,7 @@
     0 3px 6px rgba(0, 0, 0, 0.16),
     0 3px 6px rgba(0, 0, 0, 0.23);
   cursor: pointer;
-  filter: brightness(1.5);
+  background-color: rgb(6, 16, 28);
   box-shadow: inset 0px 0px 1px 1px #1e90ff57;
   border-radius: 1px;
   outline-width: 3px;
@@ -43,7 +43,7 @@
 
 :host(:hover) .body,
 :host(:focus-visible) .body {
-  color: rgb(251 251 251 / 50%);
+  color: rgba(251, 251, 251, 0.767);
 }
 .body {
   font-size: 17px;
@@ -78,4 +78,8 @@
 }
 .icon {
   color: rgba(255, 255, 255, 0.199);
+}
+:host(:hover) .icon,
+:host(:focus-visible) .icon {
+  color: rgba(255, 255, 255, 0.548);
 }

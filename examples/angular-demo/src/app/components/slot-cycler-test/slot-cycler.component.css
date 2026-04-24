@@ -7,6 +7,7 @@
   padding-top: 0px;
   justify-content: center;
   align-items: center;
+  overflow: hidden;
 }
 * {
   box-sizing: border-box;
@@ -31,7 +32,7 @@
   align-items: center;
   flex-direction: column;
   gap: 0.5rem;
-  padding: 0.25rem 0.5rem;
+  padding: 0.5rem;
 }
 missing-page-virtualizer {
   width: 100%;
@@ -108,27 +109,6 @@ feed-card {
   height: 100%;
 }
 
-.instruction-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 1rem;
-  width: 100%;
-  border-radius: 4px;
-  border: 1px solid rgb(28 104 151 / 69%);
-  overflow: hidden;
-  border-radius: 8px;
-  background: rgb(2 12 19);
-}
-.info-area {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-.is-hidden {
-  opacity: 0;
-}
-
 @media only screen and (max-width: 600px) {
   :host {
     flex-direction: column;
@@ -178,93 +158,70 @@ feed-card {
     height: 150px;
   }
 }
-/* IPad */
-@media (min-width: 768px) {
-  .general-information {
-    height: 100%;
-  }
-  .info-area {
-    display: grid;
-    grid-template-rows: 1fr min-content;
-  }
-  .mid-card {
-    width: 100%;
-  }
-  missing-fake-scrollbar {
-    --scrollbar-width: 0.25rem;
-    right: -9px;
-    height: 100%;
-    transform: none;
-  }
-  missing-fake-scrollbar.show-on-mobile-scroll {
-    opacity: 1;
-  }
-  missing-fake-scrollbar::part(thumb) {
-    --thumb-background: rgb(159 159 159);
-    width: 50%;
-    border-radius: 0.5rem;
-  }
-  missing-fake-scrollbar::part(thumb):hover {
-    width: 100%;
-  }
-  missing-fake-scrollbar::part(track) {
-    --track-background: rgb(0 0 0 / 0%);
-    outline: none;
-    box-shadow: none;
-  }
+.instruction-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  width: 100%;
+  border-radius: 4px;
+  border: 1px solid rgb(28 104 151 / 69%);
+  overflow: hidden;
+  border-radius: 8px;
+  background: rgb(2 12 19);
 }
-/* Laptop and bigger screens */
-@media (min-width: 1200px) {
-  .mid-card {
-    width: 50%;
-  }
-  missing-page-virtualizer {
-    width: 100%;
-  }
-  missing-fake-scrollbar {
-    top: 0px;
-    right: 0px;
-    transform: translate(100%, 0px);
-  }
-  missing-fake-scrollbar::part(thumb) {
-    --thumb-background: rgb(159 159 159);
-    border-radius: 0.5rem;
-    width: calc((9 / 16) * 1rem);
-  }
-  missing-fake-scrollbar::part(thumb):hover {
-    --thumb-background: rgb(209, 209, 209);
-    border-radius: 0.5rem;
-    width: calc((9 / 16) * 1rem);
-  }
-  missing-fake-scrollbar {
-    --scrollbar-width: calc((15 / 16) * 1rem);
-  }
-  missing-fake-scrollbar::part(track) {
-    --track-background: rgb(0 0 0 / 34%);
-    border-radius: 0.25rem;
-  }
+.info-area {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
-
-missing-page-virtualizer[swipe-scroll],
-missing-page-virtualizer[swipe-scroll] * {
+.is-hidden {
+  opacity: 0;
+}
+missing-page-virtualizer-vanilla {
+  display: block;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  --transform-transition-time: 0.3s;
+}
+missing-page-virtualizer-vanilla[swipe-scroll],
+missing-page-virtualizer-vanilla[swipe-scroll] .container,
+missing-page-virtualizer-vanilla[swipe-scroll] ::slotted(*) {
   touch-action: none;
   overscroll-behavior: none;
   -webkit-user-drag: none;
   user-select: none;
 }
-feed-card,
-.instruction-panel {
-  outline: 0.5px solid rgb(28 104 151 / 69%);
+
+missing-page-virtualizer-vanilla.smooth:not(.by-pass) .container {
+  transition: transform var(--transform-transition-time) ease;
 }
-.ghost {
+.container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: fit-content;
+  transform: translate3D(0, var(--translateY), 0);
+  will-change: transform;
+  min-height: 150vh;
+  /* Add this to force the browser to keep the buffer pages in GPU memory */
+  backface-visibility: hidden;
+  contain: layout paint;
+}
+.next-previous {
   position: fixed;
   top: 99999px;
   visibility: hidden;
   z-index: -1;
   opacity: 0;
-  animation: fade-in 1s ease;
+  contain: layout paint;
 }
-
+.page {
+  /* animation: fade-in 1s ease; */
+}
 @keyframes fade-in {
   0% {
     opacity: 0;

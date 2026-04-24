@@ -1,0 +1,147 @@
+<div class="mid-card">
+  <div class="virtualizer-holder">
+    <missing-page-virtualizer-sc
+      #scroller
+      [items]="items"
+      (load)="refreshRenderedArrays($event)"
+      [uniqueSelector]="'missing-dimension-reporter[is-page]'"
+      [tabbingElementSelector]="'feed-card'"
+      [numOfItems]="3"
+      default-tabbing
+      default-arrow-up-navigation
+      default-arrow-down-navigation
+      default-page-up-navigation
+      default-page-down-navigation
+      needs-transition
+      tabindex="0"
+      (scrolling)="updatePageData(true)"
+      (scroll-stopped)="updatePageData(false)"
+      [swipeScroll]="true"
+      [defaultHeight]="3000"
+      [swipeDeltaMultiplier]="swipeDeltaFromInput"
+      role="feed"
+      [attr.aria-setsize]="items.length"
+    >
+      @for (page of renderingArray; let index = $index; track $index) {
+        @if (page.pageIndex <= items.length - 1) {
+          <div
+            [attr.data-page-index]="page.pageIndex"
+            class="page"
+            style="--width: 100%"
+            is-page
+            [attr.slot]="index"
+          >
+            @for (itemIndex of itemsInPages; track itemIndex) {
+              <missing-dimension-reporter
+                style="
+                  display: flex;
+                  justify-content: center;
+                  align-items: center;
+                  flex-direction: column;
+                "
+                [attr.data-page-index]="page.pageIndex"
+              >
+                <feed-card
+                  role="article"
+                  [attr.data-item-index]="page.data[itemIndex].cardNumber - 1"
+                  text-content="{{ page.data[itemIndex].textContent }}"
+                  card-number="{{ page.data[itemIndex].cardNumber }}"
+                  likes="{{ page.data[itemIndex].likes }}"
+                  comments="{{ page.data[itemIndex].comments }}"
+                  reshares="{{ page.data[itemIndex].reshares }}"
+                  tabindex="0"
+                  [attr.data-page-index]="page.pageIndex"
+                  [attr.aria-posinset]="page.data[itemIndex].cardNumber - 1"
+                  (focusin)="focusedIn()"
+                  (focus)="focused()"
+                  (pointerover)="hello()"
+                ></feed-card>
+                @if (
+                  page.pageIndex === this.items.length - 1 &&
+                  page.data.indexOf(page.data[itemIndex]) === page.data.length - 1 &&
+                  !page.data[itemIndex].isLast
+                ) {
+                  <div class="loader-banner">
+                    <button (click)="loadMoreItems()">Load more</button>
+                  </div>
+                }
+              </missing-dimension-reporter>
+            }
+          </div>
+        }
+      }
+      <div #nextPrevious slot="next-previous">
+        @for (page of previousNextArray; track page.pageIndex) {
+          @if (page.pageIndex <= items.length - 1) {
+            <missing-dimension-reporter
+              [attr.data-page-index]="page.pageIndex"
+              class="page"
+              style="--width: 100%"
+              is-page
+            >
+              @for (item of page.data; track item.cardNumber) {
+                <missing-dimension-reporter
+                  style="
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    flex-direction: column;
+                  "
+                  [attr.data-page-index]="page.pageIndex"
+                >
+                  <feed-card
+                    [attr.data-item-index]="item.cardNumber - 1"
+                    text-content="{{ item.textContent }}"
+                    card-number="{{ item.cardNumber }}"
+                    likes="{{ item.likes }}"
+                    comments="{{ item.comments }}"
+                    reshares="{{ item.reshares }}"
+                    tabindex="0"
+                    [attr.data-page-index]="page.pageIndex"
+                  ></feed-card>
+                  @if (
+                    page.pageIndex === this.items.length - 1 &&
+                    page.data.indexOf(item) === page.data.length - 1 &&
+                    !item.isLast
+                  ) {
+                    <div class="loader-banner">
+                      <button (click)="loadMoreItems()">Load more</button>
+                    </div>
+                  }
+                </missing-dimension-reporter>
+              }
+            </missing-dimension-reporter>
+          } @else {
+            <missing-dimension-reporter
+              [attr.data-page-index]="page.pageIndex"
+              class="page"
+              style="--width: 100%"
+              style="height: 0px"
+              is-page
+            >
+              <div></div>
+            </missing-dimension-reporter>
+          }
+        }
+      </div>
+    </missing-page-virtualizer-sc>
+  </div>
+  <missing-dimension-reporter
+    class="panel-dim-reporter"
+    (dimension-changed)="storePanelHeight($event)"
+  >
+    <div class="panel info-area">
+      <div class="instruction-panel" style="overflow: auto">
+        <div>
+          Right now only swipe scroll has been implemented in this version. This is a demo of a
+          paged-virtualizer component that can technically remember the heights of 10^6 pages. If u
+          inspect the DOM, only a few DOM elements are there that simulate the whole feed. This
+          component is frontend-framework agnostic as it is a web-component and the DOM that u see
+          (the cards are fully provided by the consuming framework) and so, the consuming framework
+          has full access to the DOM.
+        </div>
+      </div>
+    </div>
+  </missing-dimension-reporter>
+  <missing-fake-scrollbar #fakeScrollbar></missing-fake-scrollbar>
+</div>

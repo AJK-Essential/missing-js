@@ -245,13 +245,6 @@ feed-card {
   }
 }
 
-missing-page-virtualizer[swipe-scroll],
-missing-page-virtualizer[swipe-scroll] * {
-  touch-action: none;
-  overscroll-behavior: none;
-  -webkit-user-drag: none;
-  user-select: none;
-}
 feed-card,
 .instruction-panel {
   outline: 0.5px solid rgb(28 104 151 / 69%);
@@ -262,14 +255,4 @@ feed-card,
   visibility: hidden;
   z-index: -1;
   opacity: 0;
-  animation: fade-in 1s ease;
-}
-
-@keyframes fade-in {
-  0% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 1;
-  }
 }

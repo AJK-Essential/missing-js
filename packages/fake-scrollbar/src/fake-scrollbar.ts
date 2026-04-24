@@ -10,10 +10,10 @@ export type ArrowClickedEvent = DraggingEvent;
 
 @customElement("missing-fake-scrollbar")
 export class MissingFakeScrollbar extends LitElement {
-  @property({ type: Number, reflect: true })
+  @property({ type: Number })
   targetScrollHeight = 0;
 
-  @property({ type: Number, reflect: true })
+  @property({ type: Number })
   targetClientHeight = 0;
 
   @property({
@@ -23,7 +23,7 @@ export class MissingFakeScrollbar extends LitElement {
   })
   arrowClickScrollTopDelta = 40;
 
-  @property({ type: Number, reflect: true })
+  @property({ type: Number })
   computedTargetScrollTop = 0;
 
   @state()

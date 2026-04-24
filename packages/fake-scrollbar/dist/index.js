@@ -1123,10 +1123,10 @@ m.styles = et`
     }
   `;
 y([
-  C({ type: Number, reflect: !0 })
+  C({ type: Number })
 ], m.prototype, "targetScrollHeight", 2);
 y([
-  C({ type: Number, reflect: !0 })
+  C({ type: Number })
 ], m.prototype, "targetClientHeight", 2);
 y([
   C({
@@ -1136,7 +1136,7 @@ y([
   })
 ], m.prototype, "arrowClickScrollTopDelta", 2);
 y([
-  C({ type: Number, reflect: !0 })
+  C({ type: Number })
 ], m.prototype, "computedTargetScrollTop", 2);
 y([
   L()

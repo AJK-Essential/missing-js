@@ -7,27 +7,29 @@ import {
   ViewChild,
   NgZone,
   afterEveryRender,
+  ChangeDetectionStrategy,
 } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { CommonService } from '../../services/common.service.js';
 import { Message } from '../../interfaces/message.interface.js';
 import { Card } from '../card/card.component.js';
 
-import '@missing-js/page-virtualizer';
+import './slot-cycler-wc-scrollbar.js';
 import '@missing-js/dimension-reporter';
 import '@missing-js/fake-scrollbar';
-import { LoadEvent, MissingPageVirtualizer } from '@missing-js/page-virtualizer';
+import { LoadEvent, MissingPageVirtualizer } from './slot-cycler-wc-scrollbar.js';
 import { MissingFakeScrollbar } from '@missing-js/fake-scrollbar';
 import { MissingDimensionReporter } from '@missing-js/dimension-reporter';
 
 @Component({
-  selector: 'missing-page-virtualizer-demo',
-  templateUrl: './missing-page-virtualizer-demo.component.html',
-  styleUrl: './missing-page-virtualizer-demo.component.css',
+  selector: 'slot-cycler-demo',
+  templateUrl: './slot-cycler.component-scrollbar.html',
+  styleUrl: './slot-cycler.component-scrollbar.css',
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   imports: [Card],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class MissingPageVirtualizerDemo implements AfterViewInit {
+export class SlotCycler implements AfterViewInit {
   hostElement;
   commonService = inject(CommonService);
   subscription?: Subscription;
@@ -39,9 +41,12 @@ export class MissingPageVirtualizerDemo implements AfterViewInit {
   startIndex = 0;
   @ViewChild('scroller') scrollRef?: ElementRef<MissingPageVirtualizer>;
   @ViewChild('fakeScrollbar') fakeScrollbarRef?: ElementRef<MissingFakeScrollbar>;
-
+  @ViewChild('container') containerRef?: ElementRef<HTMLElement>;
+  @ViewChild('nextPrevious') nextPreviousRef?: ElementRef<HTMLElement>;
   scroller?: MissingPageVirtualizer;
   fakeScrollbar?: MissingFakeScrollbar;
+  container?: HTMLElement;
+  nextPrevious?: HTMLElement;
 
   currentPage: number = 0;
   startItem = 1;
@@ -54,8 +59,16 @@ export class MissingPageVirtualizerDemo implements AfterViewInit {
 
   isScrolling = false;
   swipeDeltaFromInput = 1;
+  translateY = '0px';
+  private thisTempTranslateY = this.translateY;
   private ngZone = inject(NgZone);
+  private newArrayRendering = false;
+  protected pages = new Array(3).fill(0).map((_, index) => index);
+  protected domOrder: Array<unknown> = [];
+  protected itemsInPages = new Array(10).fill(0).map((_, index) => index);
+  private bufferRenderTimeout?: number;
   protected numOfPg = 3;
+  // private newPageRenderTime
 
   constructor(elRef: ElementRef) {
     this.hostElement = elRef.nativeElement;
@@ -64,15 +77,15 @@ export class MissingPageVirtualizerDemo implements AfterViewInit {
   ngAfterViewInit(): void {
     this.scroller = this.scrollRef?.nativeElement;
     this.fakeScrollbar = this.fakeScrollbarRef?.nativeElement;
+    this.container = this.containerRef?.nativeElement;
+    this.nextPrevious = this.nextPreviousRef?.nativeElement;
     this.loadMore().then(() => {
-      this.scroller?.updateComplete.then(() => {
-        if (this.scroller && this.fakeScrollbar) {
-          this.scroller.items = this.items;
-          this.scroller.fakeScrollbar = this.fakeScrollbar;
-          this.scroller.initialize();
-          this.fakeScrollbar.classList.add('visible');
-        }
-      });
+      if (this.scroller && this.fakeScrollbar) {
+        this.scroller.items = this.items;
+        this.scroller.fakeScrollbar = this.fakeScrollbar;
+        this.scroller.initialize();
+        this.fakeScrollbar.classList.add('visible');
+      }
     });
   }
 
@@ -82,6 +95,7 @@ export class MissingPageVirtualizerDemo implements AfterViewInit {
       const { indices } = scrollerEvent.detail;
       const tempArray1: typeof this.renderingArray = [];
       this.startIndex = indices[0];
+
       for (let i = indices[0]; i <= indices[1]; ++i) {
         tempArray1.push({
           pageIndex: i,
@@ -108,10 +122,8 @@ export class MissingPageVirtualizerDemo implements AfterViewInit {
         });
       }
       this.ngZone.run(() => {
+        this.newArrayRendering = true;
         this.renderingArray = tempArray1;
-        requestAnimationFrame(() => {
-          this.scroller!.setView();
-        });
       });
     });
   }
@@ -175,9 +187,7 @@ export class MissingPageVirtualizerDemo implements AfterViewInit {
   loadMoreItems() {
     this.loadMore().then(() => {
       this.scroller?.addNewData('append', this.items);
-      this.scroller?.allStable().then(() => {
-        this.fakeScrollbar?.requestUpdate();
-      });
+      this.fakeScrollbar?.requestUpdate();
     });
   }
   storePanelHeight(e: Event) {
@@ -189,5 +199,14 @@ export class MissingPageVirtualizerDemo implements AfterViewInit {
   }
   adjustScrollerSwipeDelta(e: Event) {
     this.swipeDeltaFromInput = parseFloat((e.target as HTMLInputElement).value);
+  }
+  focusedIn() {
+    console.log('focusin called');
+  }
+  focused() {
+    console.log('focus called');
+  }
+  hello() {
+    console.log('pointer over fired');
   }
 }
