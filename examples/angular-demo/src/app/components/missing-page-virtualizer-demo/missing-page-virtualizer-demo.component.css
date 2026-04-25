@@ -251,6 +251,7 @@ missing-page-virtualizer[swipe-scroll] * {
   overscroll-behavior: none;
   -webkit-user-drag: none;
   user-select: none;
+  -webkit-overflow-scrolling: touch;
 }
 feed-card,
 .instruction-panel {
