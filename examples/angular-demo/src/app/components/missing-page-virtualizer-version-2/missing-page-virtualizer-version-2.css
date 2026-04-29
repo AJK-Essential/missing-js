@@ -1,0 +1,307 @@
+:host {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  padding: 1rem;
+  padding-top: 0px;
+  justify-content: center;
+  align-items: center;
+}
+* {
+  box-sizing: border-box;
+}
+.mid-card {
+  position: relative;
+  width: 50%;
+  display: flex;
+  height: 100%;
+  border: 1px solid rgb(28 104 151 / 69%);
+  border-radius: 8px;
+}
+.virtualizer-holder {
+  width: 50%;
+  height: 100%;
+  padding: 1rem 0rem;
+}
+
+.page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.25rem 0.5rem;
+}
+missing-page-virtualizer {
+  width: 100%;
+}
+missing-fake-scrollbar {
+  top: 0px;
+  right: 0px;
+  transform: translate(100%, 0px);
+}
+missing-fake-scrollbar::part(thumb) {
+  --thumb-background: rgb(159 159 159);
+  border-radius: 0.5rem;
+  width: calc((9 / 16) * 1rem);
+}
+missing-fake-scrollbar::part(thumb):hover {
+  --thumb-background: rgb(209, 209, 209);
+  border-radius: 0.5rem;
+  width: calc((9 / 16) * 1rem);
+}
+missing-fake-scrollbar {
+  --scrollbar-width: calc((15 / 16) * 1rem);
+}
+missing-fake-scrollbar::part(track) {
+  --track-background: rgb(0 0 0 / 34%);
+  border-radius: 0.25rem;
+}
+feed-card {
+  width: 100%;
+}
+.panel {
+  width: 100%;
+  position: relative;
+  padding: 1rem;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.4);
+  flex-direction: column;
+  font-weight: 200;
+  height: 100%;
+}
+
+@keyframes blink-animation {
+  0% {
+    opacity: 1; /* Text is visible */
+  }
+  50% {
+    opacity: 0; /* Text is hidden */
+  }
+  100% {
+    opacity: 1; /* Text is visible again, cycle repeats */
+  }
+}
+.blink {
+  animation: blink-animation 2s ease infinite;
+}
+.loader-banner {
+  overflow: hidden;
+  bottom: 0px;
+  width: 100%;
+  background-color: rgba(1, 14, 54, 0.973);
+  color: rgba(255, 255, 255, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 50px;
+}
+.info-area p {
+  margin: 0;
+}
+.panel-dim-reporter {
+  width: 50%;
+  height: 100%;
+}
+
+.instruction-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  width: 100%;
+  border-radius: 4px;
+  border: 1px solid rgb(28 104 151 / 69%);
+  overflow: hidden;
+  border-radius: 8px;
+  background: rgb(2 12 19);
+}
+.info-area {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.is-hidden {
+  opacity: 0;
+}
+
+@media only screen and (max-width: 600px) {
+  :host {
+    flex-direction: column;
+  }
+  .mid-card {
+    width: 100%;
+    flex-direction: column;
+    height: 100%;
+  }
+  .virtualizer-holder {
+    width: 100%;
+  }
+  .panel,
+  missing-page-virtualizer {
+    width: 100%;
+  }
+  missing-fake-scrollbar {
+    --scrollbar-width: 0.25rem;
+    right: -9px;
+    height: calc(100% - var(--panel-height, 0px) - 1rem);
+    transform: none;
+  }
+  missing-fake-scrollbar.show-on-mobile-scroll {
+    opacity: 1;
+  }
+  missing-fake-scrollbar::part(thumb) {
+    --thumb-background: rgb(159 159 159);
+    width: 50%;
+    border-radius: 0.5rem;
+  }
+  missing-fake-scrollbar::part(thumb):hover {
+    width: 100%;
+  }
+  missing-fake-scrollbar::part(track) {
+    --track-background: rgb(0 0 0 / 0%);
+    outline: none;
+    box-shadow: none;
+  }
+  .panel {
+    height: fit-content;
+  }
+  .panel-dim-reporter {
+    width: 100%;
+    height: fit-content;
+  }
+  .instruction-panel {
+    height: 150px;
+  }
+}
+/* IPad */
+@media (min-width: 768px) {
+  .general-information {
+    height: 100%;
+  }
+  .info-area {
+    display: grid;
+    grid-template-rows: 1fr min-content;
+  }
+  .mid-card {
+    width: 100%;
+  }
+  missing-fake-scrollbar {
+    --scrollbar-width: 0.25rem;
+    right: -9px;
+    height: 100%;
+    transform: none;
+  }
+  missing-fake-scrollbar.show-on-mobile-scroll {
+    opacity: 1;
+  }
+  missing-fake-scrollbar::part(thumb) {
+    --thumb-background: rgb(159 159 159);
+    width: 50%;
+    border-radius: 0.5rem;
+  }
+  missing-fake-scrollbar::part(thumb):hover {
+    width: 100%;
+  }
+  missing-fake-scrollbar::part(track) {
+    --track-background: rgb(0 0 0 / 0%);
+    outline: none;
+    box-shadow: none;
+  }
+}
+/* Laptop and bigger screens */
+@media (min-width: 1200px) {
+  .mid-card {
+    width: 50%;
+  }
+  missing-page-virtualizer {
+    width: 100%;
+  }
+  missing-fake-scrollbar {
+    top: 0px;
+    right: 0px;
+    transform: translate(100%, 0px);
+  }
+  missing-fake-scrollbar::part(thumb) {
+    --thumb-background: rgb(159 159 159);
+    border-radius: 0.5rem;
+    width: calc((9 / 16) * 1rem);
+  }
+  missing-fake-scrollbar::part(thumb):hover {
+    --thumb-background: rgb(209, 209, 209);
+    border-radius: 0.5rem;
+    width: calc((9 / 16) * 1rem);
+  }
+  missing-fake-scrollbar {
+    --scrollbar-width: calc((15 / 16) * 1rem);
+  }
+  missing-fake-scrollbar::part(track) {
+    --track-background: rgb(0 0 0 / 34%);
+    border-radius: 0.25rem;
+  }
+}
+
+missing-page-virtualizer[swipe-scroll],
+missing-page-virtualizer[swipe-scroll] * {
+  touch-action: none;
+  overscroll-behavior: none;
+  -webkit-user-drag: none;
+  user-select: none;
+  -webkit-overflow-scrolling: touch;
+}
+feed-card,
+.instruction-panel {
+  outline: 0.5px solid rgb(28 104 151 / 69%);
+}
+
+swipe-delta-provider {
+  overflow-x: hidden;
+}
+
+.page:nth-child(1) {
+  position: var(--position-1);
+  transform: translateY(var(--translate-1));
+  top: var(--top-1);
+  opacity: var(--opacity-1);
+  z-index: var(--z-index-1);
+}
+.page:nth-child(2) {
+  position: var(--position-2);
+  transform: translateY(var(--translate-2));
+  top: var(--top-2);
+  opacity: var(--opacity-2);
+  z-index: var(--z-index-2);
+}
+.page:nth-child(3) {
+  position: var(--position-3);
+  transform: translateY(var(--translate-3));
+  top: var(--top-3);
+  opacity: var(--opacity-3);
+  z-index: var(--z-index-3);
+}
+.page:nth-child(4) {
+  position: var(--position-4);
+  transform: translateY(var(--translate-4));
+  top: var(--top-4);
+  opacity: var(--opacity-4);
+  z-index: var(--z-index-4);
+}
+.page:nth-child(5) {
+  position: var(--position-5);
+  transform: translateY(var(--translate-5));
+  top: var(--top-5);
+  opacity: var(--opacity-5);
+  z-index: var(--z-index-5);
+}
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}

@@ -11,7 +11,7 @@
   * affecting properties like padding,
   * width etc.
   */
-  transition: all 0.1s ease;
+  /* transition: background-color 0.1s ease; */
 }
 
 :host(:hover),

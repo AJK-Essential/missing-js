@@ -2,24 +2,13 @@ import { Routes } from '@angular/router';
 
 export const routes: Routes = [
   {
-    path: 'vanilla',
+    path: 'new-version',
     loadComponent: () =>
-      import('./components/missing-page-virtualizer-experimental-headless/missing-page-virtualizer-demo.component').then(
-        (c) => c.MissingPageVirtualizerVanillaDemo,
-      ),
+      import(
+        `./components/missing-page-virtualizer-version-2/missing-page-virtualizer-version-2`
+      ).then((c) => c.MissingPageVirtualizerVersion2),
   },
-  {
-    path: 'slot-cycler',
-    loadComponent: () =>
-      import('./components/slot-cycler-test/slot-cycler.component').then((c) => c.SlotCycler),
-  },
-  {
-    path: 'slot-cycler-scrollbar',
-    loadComponent: () =>
-      import('./components/slot-cycler-test/slot-cycler.component-scrollbar').then(
-        (c) => c.SlotCycler,
-      ),
-  },
+
   {
     path: '',
     loadComponent: () =>
