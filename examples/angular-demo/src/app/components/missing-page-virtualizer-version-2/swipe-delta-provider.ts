@@ -1,5 +1,6 @@
 import { css, html, LitElement } from 'lit';
-import { customElement, state, property } from 'lit/decorators.js';
+import { customElement, property } from 'lit/decorators.js';
+import { throttleTime, fromEvent, Subscription, animationFrameScheduler } from 'rxjs';
 
 @customElement('swipe-delta-provider')
 export class SwipeDeltaProvider extends LitElement {
@@ -49,7 +50,10 @@ export class SwipeDeltaProvider extends LitElement {
   private targetWheelListener = this.onTargetWheel.bind(this);
   private targetPointerDownListener = this.onTargetPointerDown.bind(this);
   private targetPointerMoveListener = this.onTargetPointerMove.bind(this);
-  private hostScrollListener = this.onHostScroll.bind(this);
+  private hostScrollListener = fromEvent(this, 'scroll').pipe(
+    throttleTime(0, animationFrameScheduler, { leading: true, trailing: true }),
+  );
+  private hostScrollListenerSubscription!: Subscription;
   private hostPointerMoveListener = this.onHostPointerMove.bind(this);
   private hostClickListener = this.onHostClick.bind(this);
 
@@ -68,13 +72,17 @@ export class SwipeDeltaProvider extends LitElement {
       this.style.setProperty(`--scrollHeight`, this.swipeAreaHeight + 'px');
       this.scrollTop = 0.5 * (this.scrollHeight - this.clientHeight);
       this.scrollLeft = 0.5 * (this.scrollWidth - this.clientWidth);
+      this.previousScrollY = this.scrollTop;
+      this.previousScrollX = this.scrollLeft;
       this.hostResizeObserver.observe(this.targetElement);
       this.targetElement.addEventListener('wheel', this.targetWheelListener);
       this.targetElement.addEventListener('pointermove', this.targetPointerMoveListener);
       this.targetElement.addEventListener('pointerdown', this.targetPointerDownListener);
       this.currentX = this.initialX;
       this.currentY = this.initialY;
-      this.addEventListener('scroll', this.hostScrollListener);
+      this.hostScrollListenerSubscription = this.hostScrollListener.subscribe((e) => {
+        this.onHostScroll(e);
+      });
       this.addEventListener('pointermove', this.hostPointerMoveListener);
       this.addEventListener('click', this.hostClickListener.bind(this));
     }
@@ -122,7 +130,7 @@ export class SwipeDeltaProvider extends LitElement {
     this.targetElement?.removeEventListener('wheel', this.targetWheelListener);
     this.targetElement?.removeEventListener('pointermove', this.targetPointerMoveListener);
     this.targetElement?.removeEventListener('pointerdown', this.targetPointerDownListener);
-    this.removeEventListener('scroll', this.hostScrollListener);
+    this.hostScrollListenerSubscription.unsubscribe();
     this.removeEventListener('pointermove', this.hostPointerMoveListener);
     this.removeEventListener('click', this.hostClickListener.bind(this));
     super.disconnectedCallback();
@@ -168,27 +176,31 @@ export class SwipeDeltaProvider extends LitElement {
         },
       }),
     );
-
+    this.style.removeProperty('scroll-behavior');
     if (el.scrollTop > 0.9 * (el.scrollHeight - el.clientHeight) && directionY === 'DOWN') {
       this.scrollReset = true;
-      el.scrollTop = 0.5 * el.scrollHeight - el.clientHeight;
-      this.previousScrollY = 0.5 * el.scrollHeight - el.clientHeight;
+      this.style.scrollBehavior = 'auto';
+      el.scrollTop = 0.1 * el.scrollHeight - el.clientHeight;
+      this.previousScrollY = 0.1 * el.scrollHeight - el.clientHeight;
     }
     if (el.scrollTop < 0.1 * (el.scrollHeight - el.clientHeight) && directionY === 'UP') {
       this.scrollReset = true;
-      el.scrollTop = 0.5 * el.scrollHeight - el.clientHeight;
-      this.previousScrollY = 0.5 * el.scrollHeight - el.clientHeight;
+      this.style.scrollBehavior = 'auto';
+      el.scrollTop = 0.9 * el.scrollHeight - el.clientHeight;
+      this.previousScrollY = 0.9 * el.scrollHeight - el.clientHeight;
     }
 
     if (el.scrollLeft > 0.9 * (el.scrollWidth - el.clientWidth) && directionX === 'RIGHT') {
       this.scrollReset = true;
-      el.scrollLeft = 0.5 * el.scrollWidth - el.clientWidth;
-      this.previousScrollX = 0.5 * el.scrollWidth - el.clientWidth;
+      this.style.scrollBehavior = 'auto';
+      el.scrollLeft = 0.1 * el.scrollWidth - el.clientWidth;
+      this.previousScrollX = 0.1 * el.scrollWidth - el.clientWidth;
     }
     if (el.scrollLeft < 0.1 * (el.scrollWidth - el.clientWidth) && directionX === 'LEFT') {
       this.scrollReset = true;
-      el.scrollLeft = 0.5 * el.scrollWidth - el.clientWidth;
-      this.previousScrollX = 0.5 * el.scrollWidth - el.clientWidth;
+      this.style.scrollBehavior = 'auto';
+      el.scrollLeft = 0.9 * el.scrollWidth - el.clientWidth;
+      this.previousScrollX = 0.9 * el.scrollWidth - el.clientWidth;
     }
   }
   onHostPointerMove(e: PointerEvent) {

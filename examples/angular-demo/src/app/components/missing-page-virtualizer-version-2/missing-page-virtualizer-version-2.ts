@@ -74,12 +74,14 @@ export class MissingPageVirtualizerVersion2 implements AfterViewInit {
           this.scroller.itemLength = this.items.length;
           this.scroller.fakeScrollbar = this.fakeScrollbar;
           this.scroller.initialize();
+          this.scroller.style.visibility = 'hidden';
           setTimeout(() => {
             this.swipeDeltaProvider!.targetElement = this.scroller;
-            this.swipeDeltaProvider!.swipeAreaHeight = 10000;
+            this.swipeDeltaProvider!.swipeAreaHeight = this.scroller!.scrollHeight;
             this.swipeDeltaProvider!.swipeAreaWidth = this.scroller!.clientWidth;
             this.swipeDeltaProvider!.initialize();
-          });
+            this.scroller!.style.visibility = 'visible';
+          }, 1000);
           //   this.fakeScrollbar.classList.add('visible');
           // requestAnimationFrame(this.loopCall.bind(this));
         }

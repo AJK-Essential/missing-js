@@ -252,6 +252,7 @@ missing-page-virtualizer[swipe-scroll] * {
   -webkit-user-drag: none;
   user-select: none;
   -webkit-overflow-scrolling: touch;
+  overflow-anchor: none;
 }
 feed-card,
 .instruction-panel {
@@ -260,48 +261,43 @@ feed-card,
 
 swipe-delta-provider {
   overflow-x: hidden;
+  scroll-behavior: smooth;
 }
-
+.page {
+  will-change: transform;
+}
 .page:nth-child(1) {
   position: var(--position-1);
-  transform: translateY(var(--translate-1));
+  transform: translate3D(0, var(--translate-1), 0);
   top: var(--top-1);
   opacity: var(--opacity-1);
   z-index: var(--z-index-1);
 }
 .page:nth-child(2) {
   position: var(--position-2);
-  transform: translateY(var(--translate-2));
+  transform: translate3D(0, var(--translate-2), 0);
   top: var(--top-2);
   opacity: var(--opacity-2);
   z-index: var(--z-index-2);
 }
 .page:nth-child(3) {
   position: var(--position-3);
-  transform: translateY(var(--translate-3));
+  transform: translate3D(0, var(--translate-3), 0);
   top: var(--top-3);
   opacity: var(--opacity-3);
   z-index: var(--z-index-3);
 }
 .page:nth-child(4) {
   position: var(--position-4);
-  transform: translateY(var(--translate-4));
+  transform: translate3d(0, var(--translate-4), 0);
   top: var(--top-4);
   opacity: var(--opacity-4);
   z-index: var(--z-index-4);
 }
 .page:nth-child(5) {
   position: var(--position-5);
-  transform: translateY(var(--translate-5));
+  transform: translate3D(0, var(--translate-5), 0);
   top: var(--top-5);
   opacity: var(--opacity-5);
   z-index: var(--z-index-5);
-}
-@keyframes fade-in {
-  0% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 1;
-  }
 }

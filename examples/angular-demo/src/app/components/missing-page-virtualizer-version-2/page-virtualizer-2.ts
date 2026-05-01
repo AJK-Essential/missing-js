@@ -22,6 +22,9 @@ export class PageVirtualizer2 extends LitElement {
   @property({ type: Number, reflect: true, attribute: 'default-page-height' })
   public defaultPageHeight = 200 * 10;
 
+  @property({ type: Boolean, reflect: true, attribute: 'default-scroll-anchoring' })
+  public defaultScrollAnchoring = true;
+
   @state()
   private translateY: number = 0;
 
@@ -45,13 +48,25 @@ export class PageVirtualizer2 extends LitElement {
       overflow: hidden;
       display: block;
       overflow-anchor: none;
+      opacity: 1;
+      filter:blur(0px)
+      /* This transition runs when the 'hidden' class is REMOVED */
+      /* (Going from 0 back to 1) */
+      transition: opacity 0.3s ease-out;
     }
     .container {
       will-change: transform;
       position: absolute;
       top: 0;
-      transform: translateY(var(--translateY));
+      transform: translate3D(0, var(--translateY), 0);
       width: 100%;
+    }
+    :host(.hidden) {
+      opacity: 0.5;
+      filter:blur(2px)
+      /* This transition runs when the 'hidden' class is ADDED */
+      /* (Going from 1 to 0) */
+      transition: opacity 0s;
     }
   `;
 
@@ -139,21 +154,15 @@ export class PageVirtualizer2 extends LitElement {
   }
   private onPageDimensionChange(dimensionChangedPage: MissingDimensionReporter) {
     const pageIndex = parseInt(dimensionChangedPage.dataset['pageIndex']!);
-    const oldHeight = this.ft!.getSingleHeight(pageIndex);
     const newHeight = dimensionChangedPage.height;
-    const delta = newHeight - oldHeight;
     if (this.rawHeights[pageIndex] !== newHeight) {
       this.rawHeightUpdates[pageIndex] = dimensionChangedPage.height;
     }
     if (this.rapidScrolling || this.slowScrolling) {
       return;
     } else {
-      this.ft?.update(pageIndex, dimensionChangedPage.height);
+      this.ft?.update(pageIndex, newHeight);
       this.updateMemoryWithNewHeights();
-      // this.resetGlobalPositionBasedOnLocalOffset();
-      // this.updateTotalVirtualHeight();
-      // this.setToScrollTopDispatchAndTransform(this.globalPosition);
-      // this.fakeScrollbar?.setToScrollTop(this.globalPosition);
     }
     this.setHeights();
   }
@@ -183,6 +192,7 @@ export class PageVirtualizer2 extends LitElement {
   }
   onFakeScrollbarDragging() {
     requestAnimationFrame(() => {
+      this.slowScrolling = false;
       this.jumpToScrollTop(this.fakeScrollbar!.computedTargetScrollTop);
     });
   }
@@ -200,13 +210,14 @@ export class PageVirtualizer2 extends LitElement {
     }
     this.rapidScrolling = true;
     this.setToScrollTopDispatchAndTransform(scrollTop);
-    this.setHeights();
+    // this.setHeights();
     this.setScrollEndTimer();
   }
   slowScrollBy(delta: number) {
     if (this.scrollAnchoring) {
       return;
     }
+    this.slowScrolling = true;
     this.updateMemoryWithNewHeights();
     this.howMuchWeAreFromTheStartPageTop += delta;
     this.resetGlobalPositionBasedOnLocalOffset();
@@ -241,9 +252,9 @@ export class PageVirtualizer2 extends LitElement {
       (_, index) => viewStartIndex + index,
     );
     if (indexData.toString().trim() !== this.previousIndexData.toString().trim()) {
-      if (this.slowScrolling) {
-        this.style.opacity = '0';
-      }
+      // if (this.slowScrolling) {
+      //   // this.classList.add('hidden');
+      // }
       this.previousIndexData = indexData;
       this.pendingTranslate = -this.howMuchWeAreFromTheStartPageTop;
       this.dispatchEvent(
@@ -257,6 +268,10 @@ export class PageVirtualizer2 extends LitElement {
       //   this.setView();
       // });
     } else {
+      this.container.style.setProperty(
+        '--translateY',
+        `${-this.howMuchWeAreFromTheStartPageTop}px`,
+      );
       this.translateY = -this.howMuchWeAreFromTheStartPageTop;
     }
   }
@@ -265,11 +280,9 @@ export class PageVirtualizer2 extends LitElement {
       clearTimeout(this.scrollTimer);
     }
     this.scrollTimer = setTimeout(() => {
-      if (this.accumulatedChangeInViewPosition) {
+      if (this.accumulatedChangeInViewPosition && this.defaultScrollAnchoring) {
         this.howMuchWeAreFromTheStartPageTop += this.accumulatedChangeInViewPosition;
         this.accumulatedChangeInViewPosition = 0;
-        // this.resetGlobalPositionBasedOnLocalOffset();
-        // this.setToScrollTopDispatchAndTransform(this.globalPosition);
       }
       this.updateMemoryWithNewHeights();
       this.updateTotalVirtualHeight();
@@ -277,10 +290,12 @@ export class PageVirtualizer2 extends LitElement {
       this.fakeScrollbar?.setToScrollTop(this.globalPosition);
       this.rapidScrolling = false;
       this.slowScrolling = false;
+      if (this.scrollAnchoring) {
+        document.body.style.removeProperty('cursor');
+      }
       this.scrollAnchoring = false;
       if (this.fakeScrollbar) {
         this.fakeScrollbar.style.removeProperty('pointer-events');
-        this.fakeScrollbar.style.removeProperty('cursor');
       }
       this.setHeights();
     }, this.scrollWaitTimeout);
@@ -355,6 +370,7 @@ export class PageVirtualizer2 extends LitElement {
     }
   }
   private onElementDimensionChange(dimensionChangedElement: MissingDimensionReporter) {
+    if (!this.defaultScrollAnchoring) return;
     if (this.rapidScrolling || this.slowScrolling || this.initializingResize) {
       return;
     } else {
@@ -362,34 +378,37 @@ export class PageVirtualizer2 extends LitElement {
       const oldHeight = dimensionChangedElement.oldHeight;
       const delta = newHeight - oldHeight;
       const pageIndex = parseInt(dimensionChangedElement.dataset['pageIndex']!);
-      // const page = dimensionChangedElement.closest('missing-dimension-reporter[is-page]');
-      // const pageTop = page!.getBoundingClientRect().top;
-      // const elementTop = dimensionChangedElement.getBoundingClientRect().top;
-      // const offset= elementTop - pageTop;
+      const page = dimensionChangedElement.closest('missing-dimension-reporter[is-page]');
+
+      const pageTop = page!.getBoundingClientRect().top;
+      const elementTop = dimensionChangedElement.getBoundingClientRect().top;
+      const offset = elementTop - pageTop;
+      const topIfPageDidNotMove = offset + this.translateY;
+      const newBottom =
+        topIfPageDidNotMove + dimensionChangedElement.getBoundingClientRect().height;
+      const oldBottom = newBottom - delta;
       // const newBottom =
-      if (
-        dimensionChangedElement.getBoundingClientRect().bottom - this.topBounds - delta <
-          this.topBounds &&
-        pageIndex === this.startIndex
-      ) {
+      if (oldBottom < this.topBounds && pageIndex === this.startIndex) {
         this.accumulatedChangeInViewPosition += delta;
         this.scrollAnchoring = true;
         if (this.fakeScrollbar) {
           this.fakeScrollbar.style.pointerEvents = 'none';
-          this.fakeScrollbar.style.cursor = 'wait';
         }
+        document.body.style.cursor = 'wait';
         this.translateY = -(
           this.howMuchWeAreFromTheStartPageTop + this.accumulatedChangeInViewPosition
         );
+        this.container.style.setProperty('--translateY', `${this.translateY}px`);
         this.setScrollEndTimer();
       }
     }
   }
   setView() {
+    this.setHeights();
     if (typeof this.pendingTranslate === 'number') {
-      // this.container.style.setProperty('--translateY', `${this.pendingTranslate}px`);
+      this.container.style.setProperty('--translateY', `${this.pendingTranslate}px`);
       this.translateY = this.pendingTranslate;
-      this.style.opacity = '1';
+      // this.classList.remove('hidden');
       this.pendingTranslate = undefined;
     }
   }
