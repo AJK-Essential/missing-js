@@ -16,9 +16,11 @@
       tabindex="0"
       (scrolling)="updatePageData(true)"
       (scroll-stopped)="updatePageData(false)"
-      swipe-scroll
       [swipeDeltaMultiplier]="swipeDeltaFromInput"
       [defaultHeight]="3000"
+      (pointermove)="onScrollAreaPointerMove($event)"
+      [defaultWheeling]="false"
+      (wheel)="scrollTheScrollArea($event)"
     >
       @for (page of renderingArray; track page.pageIndex) {
         @if (page.pageIndex <= items.length - 1) {
@@ -74,6 +76,15 @@
         }
       }
     </missing-page-virtualizer>
+    <div
+      class="scroll-area"
+      (scroll)="onAreaScroll($event)"
+      (pointermove)="onScrollAreaPointerMove($event)"
+      (click)="clickElementBelow($event)"
+      #scrollArea
+    >
+      <div class="large-size"></div>
+    </div>
   </div>
   <missing-dimension-reporter
     class="panel-dim-reporter"

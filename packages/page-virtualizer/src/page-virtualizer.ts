@@ -58,6 +58,11 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
   })
   public swipeDeltaMultiplier = 1;
 
+  @property({
+    type: Boolean,
+  })
+  public defaultWheeling = true;
+
   @state()
   protected globalScrollY = 0;
 
@@ -71,7 +76,7 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
   private containerHeight = 100;
 
   @state()
-  private translateY: string = "";
+  private translateY: number = 0;
 
   @property({ type: Number, reflect: true })
   private startIndex = 0;
@@ -112,7 +117,7 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
   private slotChangedResolve?: (value: void) => void;
   private jumpSkipping = false;
   private accumulatedDelta = 0;
-  private pendingViewTranslate?: string;
+  private pendingViewTranslate?: number;
   private recoveryTimeout?: number;
 
   static override styles = css`
@@ -167,7 +172,7 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
         ? html`
             <div
               class="container"
-              style="--translateY:${this.translateY};"
+              style="--translateY:${this.translateY}px;"
               tabindex="0"
             >
               <slot
@@ -231,9 +236,11 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
       this.addEventListener("scroll", () => {
         this.scrollTop = 0;
       });
-      this.addEventListener("wheel", (e) => {
-        this.slowScrollBy(e.deltaY, true);
-      });
+      if (this.defaultWheeling) {
+        this.addEventListener("wheel", (e) => {
+          this.slowScrollBy(e.deltaY, true);
+        });
+      }
       this.setupKeyboardInteractions();
     });
   }
@@ -251,7 +258,7 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
     if (changedProperties.has("swipeScroll")) {
       if (this.swipeScroll) {
         this.swipePhysics = new MissingSwipePhysicsEmitter();
-        this.swipePhysics.friction = 0.96;
+        // this.swipePhysics.friction = 0.96;
         this.swipePhysics.emitFor(this);
       } else {
         this.swipePhysics?.destroy();
@@ -305,7 +312,7 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
       const cumulativePreviousHeight =
         firstIndex !== 0 ? this.ft.getCumulativeHeight(firstIndex - 1) : 0;
       const calculatedTranslateY = -(scrollTop - cumulativePreviousHeight);
-      this.translateY = `${calculatedTranslateY}px`;
+      this.translateY = calculatedTranslateY;
       this.localScrollY = -calculatedTranslateY;
 
       this.startIndex = firstIndex;
@@ -384,8 +391,7 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
     } else {
       this.classList.remove("by-pass");
     }
-    this.localScrollY =
-      this.translateY !== "" ? -parseFloat(this.translateY) : 0;
+    this.localScrollY = !isNaN(this.translateY) ? -this.translateY : 0;
     this.localScrollY += delta;
     const pageTop =
       this.startIndex === 0
@@ -423,7 +429,7 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
       this.pauseUpdate = true;
       this.classList.add("by-pass");
       this.startIndex = firstIndex;
-      this.pendingViewTranslate = `${calculatedTranslateY}px`;
+      this.pendingViewTranslate = calculatedTranslateY;
 
       if (this.recoveryTimeout) {
         clearTimeout(this.recoveryTimeout);
@@ -443,7 +449,7 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
         }),
       );
     } else {
-      this.translateY = `${calculatedTranslateY}px`;
+      this.translateY = calculatedTranslateY;
     }
   }
 
@@ -758,7 +764,7 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
       this.classList.add("by-pass");
       this.localScrollY = this.getComputedLocalScrollY();
       this.localScrollY += delta;
-      this.translateY = `${-this.localScrollY}px`;
+      this.translateY = -this.localScrollY;
       const dimensionDivSlottedElements = this.innerSlot.assignedElements({
         flatten: true,
       });
@@ -882,7 +888,7 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
       return;
     }
     this.localScrollY += increment;
-    this.translateY = `${-this.localScrollY}px`;
+    this.translateY = -this.localScrollY;
     this.globalScrollY =
       (this.startIndex > 0
         ? this.ft!.getCumulativeHeight(this.startIndex - 1)
@@ -906,7 +912,7 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
     return globalScrollY;
   }
   public setView() {
-    if (!this.pendingViewTranslate) {
+    if (typeof this.pendingViewTranslate !== "number") {
       this.pauseUpdate = false;
       return;
     }
@@ -914,6 +920,9 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
   }
   executeSetView() {
     this.scrolling = true;
+    if (typeof this.pendingViewTranslate !== "number") {
+      return;
+    }
     if (this.scrollTimeout) {
       clearTimeout(this.scrollTimeout);
     }
@@ -922,13 +931,13 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
       this.scrolling = false;
     }, this.scrollWaitTime);
     this.classList.add("by-pass");
-    this.localScrollY = -parseFloat(this.pendingViewTranslate!);
+    this.localScrollY = -this.pendingViewTranslate;
     if (this.accumulatedDelta) {
       this.localScrollY += this.accumulatedDelta;
       this.accumulatedDelta = 0;
     }
     this.container.style.setProperty(`--translateY`, `${-this.localScrollY}px`);
-    this.translateY = `${-this.localScrollY}px`;
+    this.translateY = -this.localScrollY;
     this.pendingViewTranslate = undefined;
     const pageTop =
       this.startIndex === 0

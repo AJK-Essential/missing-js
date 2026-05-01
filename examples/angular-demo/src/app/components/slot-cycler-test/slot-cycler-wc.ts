@@ -404,7 +404,7 @@ export class MissingPageVirtualizer extends virtualiserKeyboardBase {
     if (changedProperties.has('swipeScroll')) {
       if (this.swipeScroll) {
         this.swipePhysics = new MissingSwipePhysicsEmitter();
-        this.swipePhysics.friction = 0.96;
+        // this.swipePhysics.friction = 0.96;
         this.swipePhysics.emitFor(this);
       } else {
         this.swipePhysics?.destroy();

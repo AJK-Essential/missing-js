@@ -23,8 +23,8 @@ import { MissingDimensionReporter } from '@missing-js/dimension-reporter';
 
 @Component({
   selector: 'missing-page-virtualizer-demo',
-  templateUrl: './missing-page-virtualizer-demo.component.html',
-  styleUrl: './missing-page-virtualizer-demo.component.css',
+  templateUrl: './missing-page-virtualizer-experimental.component.html',
+  styleUrl: './missing-page-virtualizer-experimental.component.css',
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   imports: [Card],
   changeDetection: ChangeDetectionStrategy.OnPush,

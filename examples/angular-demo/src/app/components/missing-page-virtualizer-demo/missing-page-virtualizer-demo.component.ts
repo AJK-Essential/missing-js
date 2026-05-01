@@ -39,9 +39,11 @@ export class MissingPageVirtualizerDemo implements AfterViewInit {
   startIndex = 0;
   @ViewChild('scroller') scrollRef?: ElementRef<MissingPageVirtualizer>;
   @ViewChild('fakeScrollbar') fakeScrollbarRef?: ElementRef<MissingFakeScrollbar>;
+  @ViewChild('scrollArea') scrollAreaRef?: ElementRef<HTMLElement>;
 
   scroller?: MissingPageVirtualizer;
   fakeScrollbar?: MissingFakeScrollbar;
+  scrollArea?: HTMLElement;
 
   currentPage: number = 0;
   startItem = 1;
@@ -57,6 +59,10 @@ export class MissingPageVirtualizerDemo implements AfterViewInit {
   private ngZone = inject(NgZone);
   protected numOfPg = 3;
 
+  private scrollReset = false;
+  private globalScrollY = 0;
+  private previousScroll?: number;
+
   constructor(elRef: ElementRef) {
     this.hostElement = elRef.nativeElement;
   }
@@ -64,6 +70,7 @@ export class MissingPageVirtualizerDemo implements AfterViewInit {
   ngAfterViewInit(): void {
     this.scroller = this.scrollRef?.nativeElement;
     this.fakeScrollbar = this.fakeScrollbarRef?.nativeElement;
+    this.scrollArea = this.scrollAreaRef?.nativeElement;
     this.loadMore().then(() => {
       this.scroller?.updateComplete.then(() => {
         if (this.scroller && this.fakeScrollbar) {
@@ -71,9 +78,14 @@ export class MissingPageVirtualizerDemo implements AfterViewInit {
           this.scroller.fakeScrollbar = this.fakeScrollbar;
           this.scroller.initialize();
           this.fakeScrollbar.classList.add('visible');
+          requestAnimationFrame(this.loopCall.bind(this));
         }
       });
     });
+  }
+  loopCall() {
+    // this.scroller!.slowScrollBy(1, true);
+    // requestAnimationFrame(this.loopCall.bind);
   }
 
   refreshRenderedArrays(e: Event) {
@@ -189,5 +201,65 @@ export class MissingPageVirtualizerDemo implements AfterViewInit {
   }
   adjustScrollerSwipeDelta(e: Event) {
     this.swipeDeltaFromInput = parseFloat((e.target as HTMLInputElement).value);
+  }
+  onAreaScroll(e: Event) {
+    if (this.scrollReset) {
+      this.scrollReset = false;
+      return;
+    }
+    const el = e.target as HTMLElement;
+    let direction: 'UP' | 'DOWN' | 'STABLE' = 'STABLE';
+    let diff = 0;
+    if (this.previousScroll) {
+      if (el.scrollTop > this.previousScroll) {
+        direction = 'DOWN';
+      } else if (el.scrollTop < this.previousScroll) {
+        direction = 'UP';
+      }
+      diff = el.scrollTop - this.previousScroll;
+    }
+    this.previousScroll = el.scrollTop;
+    this.scroller!.slowScrollBy(diff, true);
+
+    if (el.scrollTop > 0.75 * (el.scrollHeight - el.clientHeight) && direction === 'DOWN') {
+      this.scrollReset = true;
+      el.scrollTop = 0.5 * el.scrollHeight - el.clientHeight;
+      this.previousScroll = 0.5 * el.scrollHeight - el.clientHeight;
+    }
+    if (el.scrollTop < 0.25 * (el.scrollHeight - el.clientHeight) && direction === 'UP') {
+      this.scrollReset = true;
+      el.scrollTop = 0.5 * el.scrollHeight - el.clientHeight;
+      this.previousScroll = 0.5 * el.scrollHeight - el.clientHeight;
+    }
+  }
+  onScrollAreaPointerMove(e: PointerEvent) {
+    if (!this.scrollArea) return;
+    if (e.pointerType === 'mouse') {
+      this.scrollArea.style.pointerEvents = 'none';
+    } else {
+      this.scrollArea.style.pointerEvents = 'all';
+    }
+  }
+  disableScrollArea(e: Event) {
+    if (!this.scrollArea) return;
+    this.scrollArea.style.pointerEvents = 'none';
+  }
+  enableScrollArea(e: Event) {
+    if (!this.scrollArea) return;
+    this.scrollArea.style.pointerEvents = 'all';
+  }
+  clickElementBelow(e: MouseEvent) {
+    if (!this.scrollArea) return;
+    const elementsBelow = document.elementsFromPoint(e.clientX, e.clientY);
+    const elementBelow = elementsBelow[2].closest('feed-card');
+    if (elementBelow instanceof HTMLElement) {
+      elementBelow.click();
+      elementBelow.focus();
+    }
+    this.scrollArea.style.pointerEvents = 'none';
+  }
+  scrollTheScrollArea(e: WheelEvent) {
+    if (!this.scrollArea) return;
+    this.scrollArea.scrollTop += e.deltaY;
   }
 }

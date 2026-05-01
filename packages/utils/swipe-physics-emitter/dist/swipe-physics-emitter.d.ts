@@ -7,8 +7,9 @@ export interface SwipePhysicsDetail {
     isDragging: boolean;
 }
 export declare class MissingSwipePhysicsEmitter {
-    friction: number;
-    private stopViscosity;
+    private friction;
+    private launchMultiplier;
+    private snapThreshold;
     private velocityX;
     private velocityY;
     private isDragging;
@@ -18,9 +19,6 @@ export declare class MissingSwipePhysicsEmitter {
     private velocityBuffer;
     private animationId;
     private target?;
-    private pendingDeltaX;
-    private pendingDeltaY;
-    private moveRequested;
     private pointerMoveListener;
     private pointerDownListener;
     private pointerUpListener;

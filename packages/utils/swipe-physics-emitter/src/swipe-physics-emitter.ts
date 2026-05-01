@@ -9,25 +9,21 @@ export interface SwipePhysicsDetail {
 }
 
 export class MissingSwipePhysicsEmitter {
-  public friction: number = 0.985; // Slightly less friction for "premium" feel
-  private stopViscosity: number = 0.0005;
+  // --- TUNING PARAMETERS ---
+  private friction: number = 0.92; // The base glide feel
+  private launchMultiplier: number = 1.2; // Extra kick on release
+  private snapThreshold: number = 0.15; // Velocity below this = immediate stop
 
   private velocityX: number = 0;
   private velocityY: number = 0;
   private isDragging: boolean = false;
-
   private lastX: number = 0;
   private lastY: number = 0;
   private lastTime: number = 0;
 
   private velocityBuffer: { vx: number; vy: number; t: number }[] = [];
-
   private animationId: number | null = null;
   private target?: HTMLElement | null;
-
-  private pendingDeltaX: number = 0;
-  private pendingDeltaY: number = 0;
-  private moveRequested: boolean = false;
 
   private pointerMoveListener = this.onPointerMove.bind(this);
   private pointerDownListener = this.onPointerDown.bind(this);
@@ -47,21 +43,19 @@ export class MissingSwipePhysicsEmitter {
     }
     this.velocityX = 0;
     this.velocityY = 0;
-    this.pendingDeltaX = 0;
-    this.pendingDeltaY = 0;
     this.velocityBuffer = [];
   }
 
   private dispatch(deltaX: number, deltaY: number, isDragging: boolean): void {
     if (!this.target) return;
 
-    if (Math.abs(deltaX) < 0.001 && Math.abs(deltaY) < 0.001 && !isDragging)
-      return;
+    // Kill microscopic deltas that cause the "shiver"
+    if (!isDragging && Math.abs(deltaX) < 0.1 && Math.abs(deltaY) < 0.1) return;
 
     this.target.dispatchEvent(
       new CustomEvent("swipe-detected", {
         detail: {
-          deltaX, // No rounding here
+          deltaX,
           deltaY,
           velocityX: this.velocityX,
           velocityY: this.velocityY,
@@ -79,7 +73,7 @@ export class MissingSwipePhysicsEmitter {
     this.isDragging = true;
     this.lastX = e.clientX;
     this.lastY = e.clientY;
-    this.lastTime = e.timeStamp;
+    this.lastTime = performance.now();
     this.target.setPointerCapture(e.pointerId);
     this.target.addEventListener("pointermove", this.pointerMoveListener);
     this.target.addEventListener("pointerup", this.pointerUpListener);
@@ -88,50 +82,25 @@ export class MissingSwipePhysicsEmitter {
   private onPointerMove(e: PointerEvent) {
     if (!this.isDragging) return;
 
-    const events = (e as any).getCoalescedEvents
-      ? (e as any).getCoalescedEvents()
-      : [e];
+    const now = performance.now();
+    const dt = now - this.lastTime;
 
-    for (const coalescedEvent of events) {
-      const now = coalescedEvent.timeStamp;
-      const deltaX = coalescedEvent.clientX - this.lastX;
-      const deltaY = coalescedEvent.clientY - this.lastY;
-      const deltaTime = now - this.lastTime;
+    // Ignore events that fire too fast (less than 4ms) to avoid noise
+    if (dt < 4) return;
 
-      if (deltaTime > 0) {
-        this.velocityBuffer.push({
-          vx: deltaX / deltaTime,
-          vy: deltaY / deltaTime,
-          t: now,
-        });
-        // Tight window for high-speed responsiveness
-        const cutoff = now - 40;
-        while (
-          this.velocityBuffer.length > 0 &&
-          this.velocityBuffer[0].t < cutoff
-        ) {
-          this.velocityBuffer.shift();
-        }
-      }
+    const dx = e.clientX - this.lastX;
+    const dy = e.clientY - this.lastY;
 
-      this.pendingDeltaX += deltaX;
-      this.pendingDeltaY += deltaY;
-      this.lastX = coalescedEvent.clientX;
-      this.lastY = coalescedEvent.clientY;
-      this.lastTime = now;
-    }
+    this.velocityBuffer.push({ vx: dx / dt, vy: dy / dt, t: now });
 
-    if (!this.moveRequested) {
-      this.moveRequested = true;
-      requestAnimationFrame(() => {
-        if (this.isDragging) {
-          this.dispatch(this.pendingDeltaX, this.pendingDeltaY, true);
-        }
-        this.pendingDeltaX = 0;
-        this.pendingDeltaY = 0;
-        this.moveRequested = false;
-      });
-    }
+    // Maintain a small, clean window of recent velocity
+    if (this.velocityBuffer.length > 6) this.velocityBuffer.shift();
+
+    this.lastX = e.clientX;
+    this.lastY = e.clientY;
+    this.lastTime = now;
+
+    this.dispatch(dx, dy, true);
   }
 
   private onPointerUp(e: PointerEvent) {
@@ -145,24 +114,28 @@ export class MissingSwipePhysicsEmitter {
     }
 
     const now = performance.now();
-    if (now - this.lastTime > 80 || this.velocityBuffer.length === 0) {
+    // If the user "held" at the end of the swipe for > 50ms, don't glide
+    if (now - this.lastTime > 50 || this.velocityBuffer.length === 0) {
       this.stopMovement();
       return;
     }
 
-    // Weighted average favoring the very end
-    let weightSum = 0;
+    // Weighted average: Giving significantly more weight to the final 2 frames
+    let totalWeight = 0;
     let vX = 0,
       vY = 0;
+
     this.velocityBuffer.forEach((p, i) => {
-      const w = Math.pow((i + 1) / this.velocityBuffer.length, 2);
-      vX += p.vx * w;
-      vY += p.vy * w;
-      weightSum += w;
+      const weight = Math.pow(i + 1, 2);
+      vX += p.vx * weight;
+      vY += p.vy * weight;
+      totalWeight += weight;
     });
 
-    this.velocityX = vX / weightSum;
-    this.velocityY = vY / weightSum;
+    // Apply the "kick" on release and normalize
+    this.velocityX = (vX / totalWeight) * this.launchMultiplier;
+    this.velocityY = (vY / totalWeight) * this.launchMultiplier;
+
     this.lastTime = performance.now();
     this.animationId = requestAnimationFrame(this.physicsLoop);
   }
@@ -171,51 +144,36 @@ export class MissingSwipePhysicsEmitter {
     if (this.isDragging) return;
 
     const now = performance.now();
-    const dt = Math.min(now - this.lastTime, 32);
+    const dt = Math.min(now - this.lastTime, 20); // Cap dt to prevent huge jumps on frame drops
     this.lastTime = now;
 
-    const speed = Math.abs(this.velocityY);
+    const frictionCoeff = Math.pow(this.friction, dt / 16.66);
+    this.velocityX *= frictionCoeff;
+    this.velocityY *= frictionCoeff;
 
-    // Dynamic friction: Less friction at high speeds, more at low speeds
-    const currentFriction = speed > 1.5 ? this.friction : this.friction - 0.02;
-    const frictionPower = dt / 16.66;
-
-    this.velocityX *= Math.pow(currentFriction, frictionPower);
-    this.velocityY *= Math.pow(currentFriction, frictionPower);
-
-    // Constant drag (viscosity)
-    const drag = this.stopViscosity * dt;
-    if (Math.abs(this.velocityX) > drag) {
-      this.velocityX -= Math.sign(this.velocityX) * drag;
-    } else {
-      this.velocityX = 0;
-    }
-
-    if (Math.abs(this.velocityY) > drag) {
-      this.velocityY -= Math.sign(this.velocityY) * drag;
-    } else {
-      this.velocityY = 0;
-    }
-
+    // The Delta
     const dx = this.velocityX * dt;
     const dy = this.velocityY * dt;
 
-    this.dispatch(dx, dy, false);
+    // Jitter Prevention: If speed is below snapThreshold, force 0.
+    // This stops the list from "crawling" and shivering at sub-pixel levels.
+    const speed = Math.sqrt(this.velocityX ** 2 + this.velocityY ** 2);
 
-    // Stop if speed is negligible
-    if (Math.abs(this.velocityX) > 0.005 || Math.abs(this.velocityY) > 0.005) {
-      this.animationId = requestAnimationFrame(this.physicsLoop);
-    } else {
+    if (speed < this.snapThreshold) {
       this.stopMovement();
+      // One final dispatch to settle at the clean position
+      this.dispatch(0, 0, false);
+      return;
     }
+
+    this.dispatch(dx, dy, false);
+    this.animationId = requestAnimationFrame(this.physicsLoop);
   };
 
   public destroy(): void {
     this.stopMovement();
     if (this.target) {
       this.target.removeEventListener("pointerdown", this.pointerDownListener);
-      this.target.removeEventListener("pointermove", this.pointerMoveListener);
-      this.target.removeEventListener("pointerup", this.pointerUpListener);
     }
   }
 }

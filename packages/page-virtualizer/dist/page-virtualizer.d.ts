@@ -15,6 +15,7 @@ export declare class MissingPageVirtualizer extends virtualiserKeyboardBase {
     fakeScrollbar?: MissingFakeScrollbar;
     swipeScroll?: boolean;
     swipeDeltaMultiplier: number;
+    defaultWheeling: boolean;
     protected globalScrollY: number;
     private initialized;
     private virtualScrollHeight;
