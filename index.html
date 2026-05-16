@@ -1,53 +1,116 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>Redirecting...</title>
-  <!-- Beautiful loader and redirect logic -->
-  <style>
-    body {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      background-color: #f0f2f5;
-      font-family: Arial, sans-serif;
-    }
-    .loader-container {
-      text-align: center;
-    }
-    .loader {
-      border: 16px solid #f3f3f3;
-      border-top: 16px solid #3498db;
-      border-radius: 50%;
-      width: 120px;
-      height: 120px;
-      animation: spin 2s linear infinite;
-      margin: 0 auto 20px;
-    }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    .message {
-      font-size: 1.2rem;
-      color: #333;
-    }
-    .new-url {
-      color: #3498db;
-      font-weight: bold;
-    }
-  </style>
-  <script>
-    setTimeout(function() {
-      window.location.href = "https://unik-arch.github.io/unik-ui/";
-    }, 5000); // 5 seconds delay
-  </script>
-</head>
-<body>
-  <div class="loader-container">
-    <div class="loader"></div>
-    <p class="message">The demo has moved to our new ecosystem Unik-Arch <br> You are being redirected to: <span class="new-url">https://unik-arch.github.io/unik-ui/</span></p>
-  </div>
-</body>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Redirecting...</title>
+    <style>
+      * {
+        transition: all 0.2s ease;
+      }
+      @font-face {
+        font-family: "Reddit Sans";
+        src: url("./Reddit_Sans/RedditSans-VariableFont_wght.ttf")
+          format("truetype");
+        font-weight: normal;
+        font-style: normal;
+      }
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background: linear-gradient(45deg, #080f1d, #000, #080f1d);
+        color: white;
+        transition: all 0.2s ease;
+        font-family: Reddit Sans;
+        flex-direction: column;
+      }
+      body.fade-out,
+      body.fade-out .main-data * {
+        color: transparent;
+      }
+      .loader-container {
+        text-align: center;
+      }
+      .loader {
+        background: transparent;
+        border: 1px solid #4fc3f7;
+        color: #4fc3f7;
+        height: 5px;
+      }
+      .loader-progress {
+        background: #4fc3f7;
+        color: #010e36;
+        box-shadow: 0 0 15px rgba(79, 195, 247, 0.4);
+        animation: load-in 8s linear forwards;
+        animation-delay: 1s;
+        height: 100%;
+        width: 0%;
+      }
+
+      .message {
+        font-weight: 200;
+        line-height: 1.6;
+        font-size: 0.95rem;
+      }
+      .new-url {
+        color: #4fc3f7;
+        font-weight: bold;
+      }
+      .time {
+        color: #4fc3f7;
+        font-weight: 500;
+        display: inline-block;
+      }
+      @keyframes load-in {
+        0% {
+          width: 0%;
+        }
+        100% {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="main-data">
+      <div class="loader-container">
+        <div class="loader">
+          <div class="loader-progress"></div>
+        </div>
+        <h1 class="message">
+          This demo has moved to our new ecosystem Unik-Arch <br />
+          You will be redirected to:
+          <span class="new-url">https://unik-arch.github.io/unik-ui/</span>
+        </h1>
+      </div>
+    </div>
+    <script>
+      let time = 10;
+      let navigatingTimeOut;
+
+      function navigateToUrl(url, waitFor) {
+        navigatingTimeOut = setTimeout(() => {
+          clearTimeout(navigatingTimeOut);
+          window.location.href = url;
+        }, waitFor);
+      }
+
+      let timeDisplayInterval = setInterval(() => {
+        --time;
+        if (time === 1) {
+          clearInterval(timeDisplayInterval);
+          document.body.classList.add("fade-out");
+          if (document.startViewTransition) {
+            document.startViewTransition(() => {
+              navigateToUrl("https://unik-arch.github.io/unik-ui/", 1500);
+            });
+          } else {
+            navigateToUrl("https://unik-arch.github.io/unik-ui/", 1500);
+          }
+        }
+      }, 1000);
+    </script>
+  </body>
 </html>
